@@ -22,10 +22,11 @@ def load_graph_arrays(xtal_name, y, device):
 
 
 # load data from disk
-def load_data(properties, target, device): ## TODO train/validate/test split
+def load_data(properties, target, device):
     # read the list of examples
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
     data = [load_graph_arrays(names[i], df[target][i], device) for i in range(len(df.index))]
-    return data
+    feature_length = numpy.load("encoding_length.npy")
+    return data, feature_length

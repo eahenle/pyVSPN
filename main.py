@@ -17,18 +17,15 @@ def main():
     # select training device (CPU/GPU)
     device = choose_device(args.device)
 
-    # model hyperparameters
-    feature_length = 12 ## TODO record this in structure processing, pull in automatically
+    # load data [and send to GPU]
+    data, feature_length = load_data(args.properties, args.target, device)
 
     # instantiate the model [and send to GPU]
     model = Model(feature_length, args.node_encoding, args.graph_encoding, args.mpnn_steps)
     model.to(device)
 
-    # load data [and send to GPU]
-    data = load_data(args.properties, args.target, device)
-
     # split the data
-    training_data, test_data = train_test_split(data, test_size=args.test_prop)
+    training_data, test_data = train_test_split(data, test_size=args.test_prop) ## TODO cache
 
     # run the training loop
     model.train(training_data, test_data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.nb_reports)
