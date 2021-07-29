@@ -3,7 +3,7 @@ import torch
 import torch_geometric
 import pandas
 
-def load_graph_arrays(xtal_name, y):
+def load_graph_arrays(xtal_name, y, device):
     # read the arrays encoding the graph
     edge_src = numpy.load("graphs/{}_edges_src.npy".format(xtal_name))
     edge_dst = numpy.load("graphs/{}_edges_dst.npy".format(xtal_name))
@@ -14,14 +14,14 @@ def load_graph_arrays(xtal_name, y):
     edge_index = torch.tensor([edge_src, edge_dst], dtype=torch.long)
     y = torch.tensor([y], dtype=torch.float)
 
-    # pack tensors as data object
+    # pack tensors as data object [and send to GPU]
     datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y)
-    return datum
+    return datum.to(device)
 
-def load_data(properties, target):
+def load_data(properties, target, device):
     # read the list of examples
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
-    data = [load_graph_arrays(names[i], df[target][i]) for i in range(len(df.index))]
+    data = [load_graph_arrays(names[i], df[target][i], device) for i in range(len(df.index))]
     return data

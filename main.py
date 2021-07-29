@@ -5,6 +5,13 @@ from data_handling import load_data
 
 
 def main():
+    # device selection
+    if torch.cuda.is_available():
+        device = "cuda:0" ## TODO add CL flag for other GPUs, configure p2p memory via SLI
+    else:
+        device = "cpu"
+    device = torch.device(device)
+
     # data source
     properties = "properties.csv"
     target = "working_capacity_vacuum_swing [mmol/g]"
@@ -13,18 +20,18 @@ def main():
     node_encoding_length = 12 ## TODO record this in structure processing, pull in automatically
     hidden_encoding_length = 20 ## TODO make rest of HPs CL args
     graph_encoding_length = 15
-    mpnn_steps = 5
+    mpnn_steps = 2
     nb_epochs = 10000 # maximum number of training epochs
     stopping_threshold = 0.1 # average loss threshold for breaking out of the training loop
 
-    # instantiate the model
+    # instantiate the model [and send to GPU]
     model = Model(node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps)
+    model.to(device)
 
-    # load data
-    data = load_data(properties, target)
+    # load data [and send to GPU]
+    data = load_data(properties, target, device)
 
     # instantiate objects for auto-differentiation and optimization
-    optimizer = torch.optim.Adam(model.parameters()) ## TODO stuff into model class, set learning rate, regularize
     loss_func = torch.nn.MSELoss()
 
     # see what the randomly initialized model predicts (should be very bad)
@@ -34,7 +41,7 @@ def main():
     print("Prediction:\n{}\n".format(y_hat.item()))
 
     # run the training loop
-    model.train(data, optimizer, loss_func, nb_epochs, stopping_threshold)
+    model.train(data, loss_func, nb_epochs, stopping_threshold)
 
     # see what the trained model predicts (should be very good)
     print("After training:")

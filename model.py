@@ -49,6 +49,8 @@ class Model(torch.nn.Module):
         self.pooling_layer = torch.nn.Linear(hidden_encoding_length, graph_encoding_length, bias=False) ## TODO add ReLU in here
         # Readout layer returns prediction from graph encoding vector
         self.readout_layer = torch.nn.Linear(graph_encoding_length, 1)
+        # Create optimizer
+        self.optimizer = torch.optim.Adam(self.parameters()) ## TODO learning rate
     
     # forward-pass behavior
     def forward(self, data):
@@ -63,17 +65,17 @@ class Model(torch.nn.Module):
         return x
 
     # training routine
-    def train(self, data, optimizer, loss_func, nb_epochs, stopping_threshold):
+    def train(self, data, loss_func, nb_epochs, stopping_threshold):
         for i in range(nb_epochs): # train for up to `nb_epochs` cycles
             loss = 0
-            optimizer.zero_grad() # reset the gradients (...why?)
+            self.optimizer.zero_grad() # reset the gradients (...why?)
             for datum in data:
                 y_hat = self(datum) # make prediction
                 loss += loss_func(y_hat, datum.y) # accumulate loss ## TODO regularize
             if loss.item() / len(data) < stopping_threshold: # evaluate early stopping
                 print("Breaking training loop at iteration {}\n".format(i))
                 break
-            if i % 500 == 0:
+            if i % 250 == 0:
                 print(f"Epoch\t{i}\t|\tLoss\t{loss/len(data)}")
             loss.backward() # do back-propagation to get gradients
-            optimizer.step() # update weights
+            self.optimizer.step() # update weights
