@@ -15,7 +15,7 @@ def main():
     graph_encoding_length = 15
     mpnn_steps = 2
     nb_epochs = 10000 # maximum number of training epochs
-    stopping_threshold = 0.1 # loss threshold for breaking out of the training loop
+    stopping_threshold = 0.1 # average loss threshold for breaking out of the training loop
 
     # instantiate the model
     model = Model(node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps)
