@@ -11,16 +11,19 @@ class MPNN(torch_geometric.nn.MessagePassing):
     """
     
     # constructor
-    def __init__(self, node_encoding_length, hidden_encoding_length, mpnn_steps, msg_aggr="add"):
+    def __init__(self, node_encoding_length, hidden_encoding_length, mpnn_steps, msg_aggr):
         assert mpnn_steps > 0
+        assert hidden_encoding_length >= node_encoding_length
         super(MPNN, self).__init__(aggr=msg_aggr)
         self.mpnn_steps = mpnn_steps
-        self.pad = torch.nn.ZeroPad2d((0, hidden_encoding_length - node_encoding_length, 0, 0))
+        self.lin = torch.nn.Linear(node_encoding_length, hidden_encoding_length)
+        self.relu = torch.nn.ReLU()
     
     # forward-pass behavior
     def forward(self, x, edge_index):
-        # pad nodes' feature vectors w/ trailing 0's
-        x = self.pad(x)
+        # non-linearly transform features into hidden encodings for message passing
+        x = self.lin(x)
+        x = self.relu(x)
         # perform mpnn_steps of message propagation (messaging, aggregation, updating)
         for _ in range(self.mpnn_steps):
             x = self.propagate(edge_index, x=x)
@@ -29,6 +32,11 @@ class MPNN(torch_geometric.nn.MessagePassing):
     # message function
     def message(self, x_j):
         return x_j
+
+    # update function
+    def update(self, messages, x):
+        x = (x + messages) / 2
+        return x
 
 
 class Model(torch.nn.Module):
@@ -40,23 +48,25 @@ class Model(torch.nn.Module):
     """
 
     # constructor
-    def __init__(self, node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps):
+    def __init__(self, node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps, mpnn_aggr="mean"):
         super(Model, self).__init__()
         assert hidden_encoding_length >= node_encoding_length
-        # MPNN pads encoding out to hidden encoding length and develops latent representation
-        self.mpnn_layers = MPNN(node_encoding_length, hidden_encoding_length, mpnn_steps)
+        # MPNN transforms encoding to hidden encoding length and develops latent representation
+        self.mpnn_layers = MPNN(node_encoding_length, hidden_encoding_length, mpnn_steps, mpnn_aggr)
+        # ReLU for nonlinearity after message-passing
+        self.relu = torch.nn.ReLU()
         # Pooling layer reduces node encoding matrix to fixed-length vector
-        self.pooling_layer = torch.nn.Linear(hidden_encoding_length, graph_encoding_length, bias=False) ## TODO add ReLU in here
+        self.pooling_layer = torch.nn.Linear(hidden_encoding_length, graph_encoding_length, bias=False)
         # Readout layer returns prediction from graph encoding vector
         self.readout_layer = torch.nn.Linear(graph_encoding_length, 1)
-        # Create optimizer
-        self.optimizer = torch.optim.Adam(self.parameters()) ## TODO learning rate
     
     # forward-pass behavior
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         # do message passing
         x, _ = self.mpnn_layers(x, edge_index)
+        # activate through ReLU
+        x = self.relu(x)
         # do pooling
         x = self.pooling_layer(x)
         x = torch.mean(x, 0)
@@ -65,17 +75,22 @@ class Model(torch.nn.Module):
         return x
 
     # training routine
-    def train(self, data, loss_func, nb_epochs, stopping_threshold):
+    def train(self, data, nb_epochs, stopping_threshold, learning_rate, nb_reports=100):
+        # Create optimizer
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        # Define loss function
+        self.loss_func = torch.nn.MSELoss()
+        report_epochs = nb_epochs / nb_reports
         for i in range(nb_epochs): # train for up to `nb_epochs` cycles
             loss = 0
-            self.optimizer.zero_grad() # reset the gradients (...why?)
+            self.optimizer.zero_grad() # reset the gradients
             for datum in data:
                 y_hat = self(datum) # make prediction
-                loss += loss_func(y_hat, datum.y) # accumulate loss ## TODO regularize
+                loss += self.loss_func(y_hat, datum.y) # accumulate loss ## TODO regularize
             if loss.item() / len(data) < stopping_threshold: # evaluate early stopping
                 print("Breaking training loop at iteration {}\n".format(i))
                 break
-            if i % 250 == 0:
+            if i % report_epochs == 0:
                 print(f"Epoch\t{i}\t|\tLoss\t{loss/len(data)}")
             loss.backward() # do back-propagation to get gradients
             self.optimizer.step() # update weights
