@@ -15,10 +15,10 @@ def load_graph_arrays(xtal_name, y, device):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors as data object [and send to GPU]
-    datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y)
-    return datum.to(device)
+    datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y).to(device)
+    return datum
 
-def load_data(properties, target, device):
+def load_data(properties, target, device): ## TODO train/validate/test split
     # read the list of examples
     df = pandas.read_csv(properties)
     # load in the data for each example

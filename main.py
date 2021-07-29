@@ -1,53 +1,33 @@
+## TODO API for PyCall, at least for post-training tasks
+
 import torch
 
-from model import MPNN, Model
+from model import Model
 from data_handling import load_data
+from argument_parsing import parse_args, print_args
+from misc import choose_device
 
 
 def main():
-    # device selection
-    if torch.cuda.is_available():
-        device = "cuda:0" ## TODO add CL flag for other GPUs, configure p2p memory via SLI
-    else:
-        device = "cpu"
-    device = torch.device(device)
+    # get command line args (or defaults) and print them
+    args = parse_args()
+    print_args(args)
 
-    # data source
-    properties = "properties.csv"
-    target = "working_capacity_vacuum_swing [mmol/g]"
+    # select training device (CPU/GPU)
+    device = choose_device(args.device)
 
     # model hyperparameters
-    node_encoding_length = 12 ## TODO record this in structure processing, pull in automatically
-    hidden_encoding_length = 20 ## TODO make rest of HPs CL args
-    graph_encoding_length = 15
-    mpnn_steps = 2
-    nb_epochs = 10000 # maximum number of training epochs
-    stopping_threshold = 0.1 # average loss threshold for breaking out of the training loop
+    feature_length = 12 ## TODO record this in structure processing, pull in automatically
 
     # instantiate the model [and send to GPU]
-    model = Model(node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps)
+    model = Model(feature_length, args.node_encoding, args.graph_encoding, args.mpnn_steps)
     model.to(device)
 
     # load data [and send to GPU]
-    data = load_data(properties, target, device)
-
-    # instantiate objects for auto-differentiation and optimization
-    loss_func = torch.nn.MSELoss()
-
-    # see what the randomly initialized model predicts (should be very bad)
-    print("Before training:")
-    y_hat = model(data[1])
-    print("Truth:\n{}".format(data[1].y.item()))
-    print("Prediction:\n{}\n".format(y_hat.item()))
+    data = load_data(args.properties, args.target, device)
 
     # run the training loop
-    model.train(data, loss_func, nb_epochs, stopping_threshold)
-
-    # see what the trained model predicts (should be very good)
-    print("After training:")
-    y_hat = model(data[1])
-    print("Truth:\n{}".format(data[1].y.item()))
-    print("Prediction:\n{}\n".format(y_hat.item()))
+    model.train(data, args.max_epochs, args.stop_threshold, args.learning_rate, args.nb_reports)
 
 
 if __name__ == "__main__":
