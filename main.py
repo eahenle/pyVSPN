@@ -14,8 +14,8 @@ def main():
     hidden_encoding_length = 20
     graph_encoding_length = 15
     mpnn_steps = 2
-    nb_epochs = 1000 # maximum number of training epochs
-    stopping_threshold = 0.001 # loss threshold for breaking out of the training loop
+    nb_epochs = 10000 # maximum number of training epochs
+    stopping_threshold = 0.1 # loss threshold for breaking out of the training loop
 
     # instantiate the model
     model = Model(node_encoding_length, hidden_encoding_length, graph_encoding_length, mpnn_steps)
@@ -25,7 +25,7 @@ def main():
 
     # instantiate objects for auto-differentiation and optimization
     optimizer = torch.optim.Adam(model.parameters())
-    loss_func = torch.nn.L1Loss()
+    loss_func = torch.nn.MSELoss()
 
     # see what the randomly initialized model predicts (should be very bad)
     print("Before training:")

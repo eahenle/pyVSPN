@@ -70,8 +70,10 @@ class Model(torch.nn.Module):
                 optimizer.zero_grad() # reset the gradients
                 y_hat = self(datum) # make prediction
                 loss += loss_func(y_hat, datum.y) # accumulate loss
-            if loss.item() < stopping_threshold: # evaluate early stopping
+            if loss.item() / len(data) < stopping_threshold: # evaluate early stopping
                 print("Breaking training loop at iteration {}\n".format(i))
                 break
+            if i % 500 == 0:
+                print(f"Epoch\t{i}\t|\tLoss\t{loss/len(data)}")
             loss.backward() # do back-propagation
             optimizer.step() # update optimizer
