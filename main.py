@@ -1,6 +1,7 @@
 ## TODO API for PyCall, at least for post-training tasks
 
 import torch
+from sklearn.model_selection import train_test_split
 
 from model import Model
 from data_handling import load_data
@@ -26,8 +27,11 @@ def main():
     # load data [and send to GPU]
     data = load_data(args.properties, args.target, device)
 
+    # split the data
+    training_data, test_data = train_test_split(data, test_size=args.test_prop)
+
     # run the training loop
-    model.train(data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.nb_reports)
+    model.train(training_data, test_data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.nb_reports)
 
 
 if __name__ == "__main__":

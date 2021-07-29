@@ -3,6 +3,8 @@ import torch
 import torch_geometric
 import pandas
 
+
+# load the serialized array representations of a graph, collate into a Data object, and send to device
 def load_graph_arrays(xtal_name, y, device):
     # read the arrays encoding the graph
     edge_src = numpy.load("graphs/{}_edges_src.npy".format(xtal_name))
@@ -18,6 +20,8 @@ def load_graph_arrays(xtal_name, y, device):
     datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y).to(device)
     return datum
 
+
+# load data from disk
 def load_data(properties, target, device): ## TODO train/validate/test split
     # read the list of examples
     df = pandas.read_csv(properties)
