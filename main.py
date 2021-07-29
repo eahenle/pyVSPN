@@ -27,7 +27,7 @@ def main():
     data = load_data(args.properties, args.target, device)
 
     # run the training loop
-    model.train(data, args.max_epochs, args.stop_threshold, args.learning_rate, args.nb_reports)
+    model.train(data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.nb_reports)
 
 
 if __name__ == "__main__":

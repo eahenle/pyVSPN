@@ -75,7 +75,7 @@ class Model(torch.nn.Module):
         return x
 
     # training routine
-    def train(self, data, nb_epochs, stopping_threshold, learning_rate, nb_reports=100):
+    def train(self, data, nb_epochs, stopping_threshold, learning_rate, l1_reg, nb_reports=100):
         # Create optimizer
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         # Define loss function
@@ -86,11 +86,13 @@ class Model(torch.nn.Module):
             self.optimizer.zero_grad() # reset the gradients
             for datum in data:
                 y_hat = self(datum) # make prediction
-                loss += self.loss_func(y_hat, datum.y) # accumulate loss ## TODO regularize
-            if loss.item() / len(data) < stopping_threshold: # evaluate early stopping
+                loss += self.loss_func(y_hat, datum.y) # accumulate loss
+            loss /= len(data) # normalize loss
+            if loss.item() < stopping_threshold: # evaluate early stopping
                 print("Breaking training loop at iteration {}\n".format(i))
                 break
             if i % report_epochs == 0:
-                print(f"Epoch\t{i}\t|\tLoss\t{loss/len(data)}")
+                print(f"Epoch\t{i}\t\t|\tLoss\t{loss/len(data)}")
+            loss += l1_reg * sum([torch.sum(abs(params)) for params in self.parameters()]) # L1 weight regularization
             loss.backward() # do back-propagation to get gradients
             self.optimizer.step() # update weights
