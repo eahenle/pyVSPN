@@ -22,7 +22,7 @@ class MPNN(torch_geometric.nn.MessagePassing):
         # pad nodes' feature vectors w/ trailing 0's
         x = self.pad(x)
         # perform mpnn_steps of message propagation (messaging, aggregation, updating)
-        for _ in range(1, self.mpnn_steps+1):
+        for _ in range(self.mpnn_steps):
             x = self.propagate(edge_index, x=x)
         return x, edge_index
     
@@ -46,7 +46,7 @@ class Model(torch.nn.Module):
         # MPNN pads encoding out to hidden encoding length and develops latent representation
         self.mpnn_layers = MPNN(node_encoding_length, hidden_encoding_length, mpnn_steps)
         # Pooling layer reduces node encoding matrix to fixed-length vector
-        self.pooling_layer = torch.nn.Linear(hidden_encoding_length, graph_encoding_length, bias=False)
+        self.pooling_layer = torch.nn.Linear(hidden_encoding_length, graph_encoding_length, bias=False) ## TODO add ReLU in here
         # Readout layer returns prediction from graph encoding vector
         self.readout_layer = torch.nn.Linear(graph_encoding_length, 1)
     
@@ -64,16 +64,16 @@ class Model(torch.nn.Module):
 
     # training routine
     def train(self, data, optimizer, loss_func, nb_epochs, stopping_threshold):
-        for i in range(1, nb_epochs): # train for up to `nb_epochs` cycles
+        for i in range(nb_epochs): # train for up to `nb_epochs` cycles
             loss = 0
+            optimizer.zero_grad() # reset the gradients (...why?)
             for datum in data:
-                optimizer.zero_grad() # reset the gradients
                 y_hat = self(datum) # make prediction
-                loss += loss_func(y_hat, datum.y) # accumulate loss
+                loss += loss_func(y_hat, datum.y) # accumulate loss ## TODO regularize
             if loss.item() / len(data) < stopping_threshold: # evaluate early stopping
                 print("Breaking training loop at iteration {}\n".format(i))
                 break
             if i % 500 == 0:
                 print(f"Epoch\t{i}\t|\tLoss\t{loss/len(data)}")
-            loss.backward() # do back-propagation
-            optimizer.step() # update optimizer
+            loss.backward() # do back-propagation to get gradients
+            optimizer.step() # update weights

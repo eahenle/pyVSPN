@@ -23,6 +23,5 @@ def load_data(properties, target):
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
-    targets = df[target]
-    data = [load_graph_arrays(names[i], targets[i]) for i in range(len(df.index))]
+    data = [load_graph_arrays(names[i], df[target][i]) for i in range(len(df.index))]
     return data

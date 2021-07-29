@@ -10,10 +10,10 @@ def main():
     target = "working_capacity_vacuum_swing [mmol/g]"
 
     # model hyperparameters
-    node_encoding_length = 12
-    hidden_encoding_length = 20
+    node_encoding_length = 12 ## TODO record this in structure processing, pull in automatically
+    hidden_encoding_length = 20 ## TODO make rest of HPs CL args
     graph_encoding_length = 15
-    mpnn_steps = 2
+    mpnn_steps = 5
     nb_epochs = 10000 # maximum number of training epochs
     stopping_threshold = 0.1 # average loss threshold for breaking out of the training loop
 
@@ -24,7 +24,7 @@ def main():
     data = load_data(properties, target)
 
     # instantiate objects for auto-differentiation and optimization
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters()) ## TODO stuff into model class, set learning rate, regularize
     loss_func = torch.nn.MSELoss()
 
     # see what the randomly initialized model predicts (should be very bad)
