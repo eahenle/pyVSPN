@@ -11,12 +11,12 @@ def parse_args():
     # optional arguments
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu")
-
-    parser.add_argument("--graph_encoding", type=int, default=100,
-        help="Length of graph's vector encoding")
     
     parser.add_argument("--l1_reg", type=float, default=0,
-        help="Alpha hyperparameter for L1 weight regularization")
+        help="Lambda hyperparameter for L1 regularization")
+
+    parser.add_argument("--l2_reg", type=float, default=0,
+        help="Lambda hyperparameter for L2 regularization")
 
     parser.add_argument("--learning_rate", type=float, default=0.001,
         help="Learning rate for gradient descent optimization (Adam)")

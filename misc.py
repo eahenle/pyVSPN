@@ -6,5 +6,5 @@ def choose_device(device_name):
     elif torch.cuda.is_available():
         device = torch.device(device_name)
     else:
-        raise Exception("CUDA not available")
+        raise Exception("CUDA not available") ## TODO check CUDA compute level compatibility, too
     return device
