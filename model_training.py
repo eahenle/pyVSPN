@@ -15,7 +15,7 @@ def train(model, training_data, test_data, nb_epochs=1, stopping_threshold=0.1, 
         losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses
         loss = sum(losses) / len(training_data) # accumulate normalized losses
         if loss.item() < stopping_threshold: # evaluate early stopping ## TODO other early stopping criteria
-            print("Breaking training loop at iteration {}\n".format(i))
+            print(f"Breaking training loop at iteration {i}\n")
             break
         if i % report_epochs == 0:
             print(f"Epoch\t{i}\t\t|\tLoss\t{loss}") ## TODO record on disk for viz

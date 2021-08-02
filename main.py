@@ -1,5 +1,3 @@
-## TODO API for PyCall, at least for post-training tasks
-
 import sklearn
 import os
 import pickle
@@ -28,14 +26,14 @@ def main():
 
     # split the data ## TODO add arg for ignoring and overwriting cache
     data_split_file = "./data_split.pkl"
-    if os.path.isfile(data_split_file):
-        data_split_file = open(data_split_file, "rb")
-        training_data, test_data = pickle.load(data_split_file)
-        data_split_file.close()
-    else:
+    if args.recache or not os.path.isfile(data_split_file):
         training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=args.test_prop)
         data_split_file = open(data_split_file, "wb")
         pickle.dump((training_data, test_data), data_split_file)
+        data_split_file.close()
+    else:
+        data_split_file = open(data_split_file, "rb")
+        training_data, test_data = pickle.load(data_split_file)
         data_split_file.close()
 
     # run the training loop

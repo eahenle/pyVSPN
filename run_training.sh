@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 python3 main.py \
+    "working_capacity_vacuum_swing [mmol/g]"
     --node_encoding 20 \
     --mpnn_steps 5 \
     --max_epochs 6000 \
@@ -9,4 +10,4 @@ python3 main.py \
     --l1_reg 0.01 \
     --l2_reg 0.001 \
     --s2s_steps 2 \
-    "working_capacity_vacuum_swing [mmol/g]"
+#    --recache True

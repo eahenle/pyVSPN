@@ -36,6 +36,9 @@ def parse_args():
     parser.add_argument("--properties", default="properties.csv",
         help="File containing structure names and target values (CSV format)")
 
+    parser.add_argument("--recache", type=bool, default=False,
+        help="Ignore and overwrite cache files")
+
     parser.add_argument("--stop_threshold", type=float, default=0.1,
         help="Example-averaged loss threshold for early stopping")
 
