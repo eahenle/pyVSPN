@@ -17,7 +17,7 @@ def load_graph_arrays(xtal_name, y, device):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors as data object [and send to GPU]
-    datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y).to(device)
+    datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y, batch = torch.tensor([0])).to(device) ## TODO this can't be the right way to handle set2set
     return datum
 
 

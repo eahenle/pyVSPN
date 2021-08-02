@@ -20,7 +20,7 @@ def main():
     data, feature_length = load_data(args.properties, args.target, device)
 
     # instantiate the model [and send to GPU]
-    model = Model(feature_length, args.node_encoding, args.mpnn_steps)
+    model = Model(feature_length, args.node_encoding, args.mpnn_steps, args.s2s_steps)
     model.to(device)
 
     # split the data

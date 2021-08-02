@@ -39,6 +39,9 @@ def parse_args():
     parser.add_argument("--stop_threshold", type=float, default=0.1,
         help="Example-averaged loss threshold for early stopping")
 
+    parser.add_argument("--s2s_steps", type=int, default=5,
+        help="Number of processing steps for Set2Set")
+
     parser.add_argument("--test_prop", type=float, default=0.2,
         help="Proportion of data to use for testing")
     

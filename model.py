@@ -41,7 +41,7 @@ class Model(torch.nn.Module):
     """
 
     # constructor
-    def __init__(self, node_encoding_length, hidden_encoding_length, mpnn_steps, mpnn_aggr="mean"):
+    def __init__(self, node_encoding_length, hidden_encoding_length, mpnn_steps, s2s_steps, mpnn_aggr="mean"):
         super(Model, self).__init__()
         assert hidden_encoding_length >= node_encoding_length
         # ReLU for nonlinear activation steps
@@ -51,9 +51,9 @@ class Model(torch.nn.Module):
         # MPNN develops latent representation
         self.mpnn_layers = MPNN(mpnn_steps, mpnn_aggr)
         # readout layer reduces node encoding matrix to fixed-length vector
-        self.readout_layer = torch.nn.Linear(hidden_encoding_length, hidden_encoding_length)
+        self.readout_layer = torch_geometric.nn.Set2Set(hidden_encoding_length, s2s_steps)
         # prediction layer returns prediction from graph encoding vector
-        self.prediction_layer = torch.nn.Linear(hidden_encoding_length, 1)
+        self.prediction_layer = torch.nn.Linear(2 * hidden_encoding_length, 1)
     
     # forward-pass behavior
     def forward(self, data):
@@ -63,28 +63,25 @@ class Model(torch.nn.Module):
         x = self.relu(x)
         # do message passing
         x, _ = self.mpnn_layers(x, edge_index)
-        x = self.relu(x)
         # do readout
-        x = self.readout_layer(x)
-        x = torch.mean(x, 0) ## TODO replace w/ set2set
-        x = self.relu(x)
+        x = self.readout_layer(x, data.batch)
         # make prediction
         x = self.prediction_layer(x)
         return x
 
-    # training routine
+    # training routine ## TODO move to separate module, implement checkpoints
     def train(self, training_data, test_data, nb_epochs=1, stopping_threshold=0.1, learning_rate=0.01, l1_reg=0, l2_reg=0, nb_reports=1):
         # Create optimizer
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=l2_reg)
+        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=l2_reg)
         # Define loss function
-        self.loss_func = torch.nn.MSELoss()
+        loss_func = torch.nn.MSELoss()
         report_epochs = nb_epochs / nb_reports
         for i in range(nb_epochs): # train for up to `nb_epochs` cycles
             loss = 0
-            self.optimizer.zero_grad() # reset the gradients
+            optimizer.zero_grad() # reset the gradients
             for datum in training_data: ## TODO batch training, vectorization
                 y_hat = self(datum) # make prediction
-                loss += self.loss_func(y_hat, datum.y) # accumulate loss
+                loss += loss_func(y_hat, datum.y) # accumulate loss
             loss /= len(training_data) # normalize loss
             if loss.item() < stopping_threshold: # evaluate early stopping ## TODO other early stopping criteria
                 print("Breaking training loop at iteration {}\n".format(i))
@@ -93,8 +90,8 @@ class Model(torch.nn.Module):
                 print(f"Epoch\t{i}\t\t|\tLoss\t{loss}") ## TODO record on disk for viz
             loss += l1_reg * sum([torch.sum(abs(params)) for params in self.parameters()]) # L1 weight regularization ## TODO library function? L2?
             loss.backward() # do back-propagation to get gradients
-            self.optimizer.step() # update weights
+            optimizer.step() # update weights
         y_hat_test = torch.tensor([self(x) for x in test_data])
         y_test = torch.tensor([x.y for x in test_data])
-        test_loss = self.loss_func(y_hat_test, y_test)
+        test_loss = loss_func(y_hat_test, y_test)
         print(f"\nTest loss: {test_loss}\n")

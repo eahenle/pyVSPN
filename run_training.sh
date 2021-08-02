@@ -8,4 +8,5 @@ python3 main.py \
     --nb_reports 50 \
     --l1_reg 0.01 \
     --l2_reg 0.001 \
+    --s2s_steps 2 \
     "working_capacity_vacuum_swing [mmol/g]"
