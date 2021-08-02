@@ -1,8 +1,9 @@
 ## TODO API for PyCall, at least for post-training tasks
 
-from sklearn.model_selection import train_test_split
+import sklearn
 
 from model import Model
+from model_training import train
 from data_handling import load_data
 from argument_parsing import parse_args, print_args
 from misc import choose_device
@@ -24,10 +25,10 @@ def main():
     model.to(device)
 
     # split the data
-    training_data, test_data = train_test_split(data, test_size=args.test_prop) ## TODO cache
+    training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=args.test_prop) ## TODO cache
 
     # run the training loop
-    model.train(training_data, test_data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.l2_reg, args.nb_reports)
+    train(model, training_data, test_data, args.max_epochs, args.stop_threshold, args.learning_rate, args.l1_reg, args.l2_reg, args.nb_reports)
 
     ## TODO visualize training curves, test accuracy
 
