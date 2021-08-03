@@ -6,6 +6,8 @@ import sklearn
 import os
 import pickle
 
+from misc import cached
+
 
 class Dataset(torch.utils.data.Dataset):
     """
@@ -74,13 +76,9 @@ def load_data(args, device):
     - feature_length: the length of the node feature vectors
     """
     # unpack args
-    properties      = args.properties
-    target          = args.target
-    cache_path      = args.cache_path
-    test_prop       = args.test_prop
-    recache         = args.recache
-    input_path      = args.input_path
-    batch_size      = args.batch_size
+    properties  = args.properties
+    target      = args.target
+    input_path  = args.input_path
 
     # read the list of examples
     df = pandas.read_csv(properties)
@@ -90,42 +88,24 @@ def load_data(args, device):
     feature_length = numpy.load(f"{input_path}/encoding_length.npy")
 
     # split the data
-    training_data, test_data = get_split_data(data, cache_path, test_prop, recache)
+    training_data, test_data = get_split_data(data, args)
 
     # generate training Dataset object
     training_data = Dataset(training_data)
 
     # split into mini-batches
-    training_data = get_mini_batches(training_data, batch_size, cache_path, recache)
+    training_data = get_mini_batches(training_data, args)
 
     return training_data, test_data, feature_length
 
 
 # splits and caches test/train data (or loads from cache file)
-def get_split_data(data, cache_path, test_prop, recache):
-    cache_file = f"{cache_path}/data_split.pkl"
-    if recache or not os.path.isfile(cache_file): # do the split and save the cache file
-        training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=test_prop)
-        cache_file = open(cache_file, "wb")
-        pickle.dump((training_data, test_data), cache_file)
-        cache_file.close()
-    else: # load from the cache file
-        cache_file = open(cache_file, "rb")
-        training_data, test_data = pickle.load(cache_file)
-        cache_file.close()
-    return training_data, test_data
+def get_split_data(data, args):
+    f = lambda : sklearn.model_selection.train_test_split(data, test_size=args.test_prop)
+    return cached(f, "data_split.pkl", args)
 
 
 # splits and caches minibatches (or loads from cache file)
-def get_mini_batches(training_data, batch_size, cache_path, recache):
-    cache_file = f"{cache_path}/minibatches.pkl"
-    if recache or not os.path.isfile(cache_file): # make minibatches and save the cache file
-        training_data = torch.utils.data.DataLoader(dataset=training_data, batch_size=batch_size, shuffle=True)
-        cache_file = open(cache_file, "wb")
-        pickle.dump(training_data, cache_file)
-        cache_file.close()
-    else: # load from the cache file
-        cache_file = open(cache_file, "rb")
-        training_data = pickle.load(cache_file)
-        cache_file.close()
-    return training_data
+def get_mini_batches(training_data, args):
+    f = lambda : torch.utils.data.DataLoader(dataset=training_data, batch_size=args.batch_size, shuffle=True)
+    return cached(f, "minibatches.pkl", args)

@@ -6,7 +6,7 @@ python3 main.py                             \
     "working_capacity_vacuum_swing [mmol/g]"\
     --batch_size        2                   \
     --device            cpu                 \
-    --learning_rate     0.002               \
+    --learning_rate     0.005               \
     --l1_reg            0.01                \
     --l2_reg            0.001               \
     --max_epochs        5000                \

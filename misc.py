@@ -1,6 +1,6 @@
-from genericpath import isdir
 import torch
 import os
+import pickle
 
 # select CPU or GPU as compute device
 def choose_device(args):
@@ -18,3 +18,21 @@ def choose_device(args):
 def check_paths(args):
     if not os.path.isdir(args.cache_path):
         os.mkdir(args.cache_path)
+
+
+def cached(f, cache_file, args):
+    # unpack args
+    cache_path = args.cache_path
+    recache = args.recache
+    # determine full cache file path
+    cache_file = f"{cache_path}/{cache_file}"
+    if recache or not os.path.isfile(cache_file):
+        # run f(farg) and cache result
+        output = f()
+        with open(cache_file, "wb") as cf:
+            pickle.dump(output, cf)
+    else:
+        # load cached result
+        with open(cache_file, "rb") as cf:
+            output = pickle.load(cf)
+    return output

@@ -2,7 +2,7 @@ from model import Model
 from model_training import train
 from data_handling import load_data
 from argument_parsing import parse_args, print_args
-from misc import choose_device
+from misc import choose_device, check_paths
 
 
 def main():
@@ -10,13 +10,16 @@ def main():
     args = parse_args()
     print_args(args)
 
+    # check for required folders
+    check_paths(args)
+
     # select training device (CPU/GPU)
     device = choose_device(args)
 
-    # load data [and send to GPU]
+    # load data [and send to device]
     training_data, test_data, feature_length = load_data(args, device)
 
-    # instantiate the model [and send to GPU]
+    # instantiate the model [and send to device]
     model = Model(feature_length, args).to(device)
 
     # run the training loop
