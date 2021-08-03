@@ -19,13 +19,13 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=10,
         help="Number of examples per mini-batch during training. Ignored when loading batches from disk.")
 
-    parser.add_argument("--data_split_file", default="./data_split.pkl", ## TODO combine all pkl args into one flag (pkl_path)
+    parser.add_argument("--data_split_file", default="./data_split.pkl",
         help="Pickle file to cache data after test/train splitting.")
 
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
     
-    parser.add_argument("--enc_len_file", default="input_data/encoding_length.npy", ## TODO combine all input args into one flag (input_path)
+    parser.add_argument("--enc_len_file", default="input_data/encoding_length.npy",
         help="Numpy file giving the length of the node feature vectors. Ignored if loading from cache.")
     
     parser.add_argument("--graph_folder", default="input_data/graphs",

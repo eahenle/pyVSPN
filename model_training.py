@@ -1,6 +1,6 @@
 import torch
 
-# training routine ## TODO implement checkpoints
+# training routine
 def train(model, training_data, test_data, args):
     # unpack args
     nb_epochs = args.max_epochs
@@ -22,19 +22,19 @@ def train(model, training_data, test_data, args):
             batch_loss = 0
             optimizer.zero_grad() # reset the gradients for the current batch
             y_hat = [model(X[j], E[j], batch[j]) for j in range(len(y))] # make predictions
-            losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses ## TODO diagnose tensor size warning
+            losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses
             batch_loss = sum(losses) / len(training_data) # accumulate normalized losses
             batch_loss += l1_reg * sum([torch.sum(abs(params)) for params in model.parameters()]) # L1 regularization
             batch_loss.backward() # do back-propagation to get gradients
             optimizer.step() # update weights
-            epoch_loss += batch_loss ## TODO refactor to use a validation set for epoch loss
+            epoch_loss += batch_loss
         
-        if epoch_loss.item() < stopping_threshold: # evaluate early stopping ## TODO other early stopping criteria
+        if epoch_loss.item() < stopping_threshold: # evaluate early stopping
             print(f"Breaking training loop at iteration {i}\n")
             break
         
         if i % (nb_epochs // nb_reports) == 0: # print training reports
-            print(f"Epoch\t{i}\t\t|\tLoss\t{epoch_loss}") ## TODO record on disk for viz
+            print(f"Epoch\t{i}\t\t|\tLoss\t{epoch_loss}")
         
     # evaluate test loss
     model.eval()

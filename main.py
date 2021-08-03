@@ -22,8 +22,6 @@ def main():
     # run the training loop
     train(model, training_data, test_data, args)
 
-    ## TODO visualize training curves, test accuracy
-
 
 if __name__ == "__main__":
     main()

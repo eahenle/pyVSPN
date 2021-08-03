@@ -23,11 +23,11 @@ class MPNN(torch_geometric.nn.MessagePassing):
         return x, edge_index
     
     # message function
-    def message(self, x_j): ## TODO implement distance-aware message function
+    def message(self, x_j):
         return x_j
 
     # update function
-    def update(self, messages, x): ## TODO implement gated cell updates
+    def update(self, messages, x):
         x = (x + messages) / 2
         return x
 

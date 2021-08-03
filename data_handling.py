@@ -26,10 +26,10 @@ class Dataset(torch.utils.data.Dataset):
             self.data_list[i].x = pad(x)
             # pad edge lists
             edge_index = self.data_list[i].edge_index
-            pad = torch.nn.ZeroPad2d((0, max_edges - edge_index.shape[1], 0, 0)) ## TODO refactor to fix obvious problem with 0-padding (encodes a ton of loops!)
+            pad = torch.nn.ZeroPad2d((0, max_edges - edge_index.shape[1], 0, 0))
             self.data_list[i].edge_index = pad(edge_index)
     
-    def __getitem__(self, index): ## TODO refactor for on-demand loading of data from disk
+    def __getitem__(self, index):
         datum = self.data_list[index]
         return (datum.x, datum.edge_index, datum.batch, datum.y)
     
@@ -37,8 +37,8 @@ class Dataset(torch.utils.data.Dataset):
         return len(self.data_list)
 
 
-# load the serialized array representations of a graph, collate into a Data object, and send to device
-def load_graph_arrays(xtal_name, y, device, graph_folder):
+# load the serialized array representations of a graph, and collate into a Data object
+def load_graph_arrays(xtal_name, y, graph_folder):
     # read the arrays encoding the graph
     edge_src = numpy.load(f"{graph_folder}/{xtal_name}_edges_src.npy")
     edge_dst = numpy.load(f"{graph_folder}/{xtal_name}_edges_dst.npy")
@@ -50,7 +50,7 @@ def load_graph_arrays(xtal_name, y, device, graph_folder):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors as data object [and send to GPU]
-    datum = torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0])).to(device) ## TODO refactor use of .to(device) for minibatches
+    datum = torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0]))
     return datum
 
 
@@ -88,7 +88,7 @@ def load_data(args, device):
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
-    data = [load_graph_arrays(names[i], df[target][i], device, graph_folder) for i in range(len(df.index))]
+    data = [load_graph_arrays(names[i], df[target][i], graph_folder) for i in range(len(df.index))]
     feature_length = numpy.load(enc_len_file)
 
     # split the data
@@ -118,7 +118,7 @@ def get_split_data(data, data_split_file, test_prop, recache):
 
 
 # splits and caches minibatches (or loads from cache file)
-def get_mini_batches(training_data, batch_size, minibatch_file, recache): ## TODO implement cache/load function to reduce repeated code
+def get_mini_batches(training_data, batch_size, minibatch_file, recache):
     if recache or not os.path.isfile(minibatch_file): # make minibatches and save the cache file
         training_data = torch.utils.data.DataLoader(dataset=training_data, batch_size=batch_size, shuffle=True)
         minibatch_file = open(minibatch_file, "wb")
