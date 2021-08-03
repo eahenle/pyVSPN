@@ -17,7 +17,7 @@ def main():
     training_data, test_data, feature_length = load_data(args, device)
 
     # instantiate the model [and send to GPU]
-    model = Model(feature_length, args.node_encoding, args.mpnn_steps, args.s2s_steps).to(device)
+    model = Model(feature_length, args).to(device)
 
     # run the training loop
     train(model, training_data, test_data, args)

@@ -1,4 +1,7 @@
 #!/usr/bin/bash
+
+# runs MPNN training using specified flag args
+
 python3 main.py                             \
     "working_capacity_vacuum_swing [mmol/g]"\
     --batch_size        2                   \

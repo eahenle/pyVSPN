@@ -7,12 +7,19 @@ import os
 import pickle
 
 
-class Dataset(torch.utils.data.Dataset): ## TODO refactor for on-demand loading of data from disk
+class Dataset(torch.utils.data.Dataset):
+    """
+    data_set = Dataset(data_list)
+
+    Transforms a data list into a data set for processing into mini-batches via torch's `DataLoader`
+    """
+
     def __init__(self, data_list):
         self.data_list = data_list
+        # tensors must all be same shape in a "stack". Determine maximum node/edge counts for padding smaller inputs
         max_nodes = max([datum.x.shape[0] for datum in data_list])
         max_edges = max([datum.edge_index.shape[1] for datum in data_list])
-        for i in range(len(data_list)):
+        for i in range(len(data_list)): # loop over data list indices
             # pad feature matrices
             x = self.data_list[i].x
             pad = torch.nn.ZeroPad2d((0, 0, 0, max_nodes - x.shape[0]))
@@ -22,11 +29,11 @@ class Dataset(torch.utils.data.Dataset): ## TODO refactor for on-demand loading 
             pad = torch.nn.ZeroPad2d((0, max_edges - edge_index.shape[1], 0, 0)) ## TODO refactor to fix obvious problem with 0-padding (encodes a ton of loops!)
             self.data_list[i].edge_index = pad(edge_index)
     
-    def __getitem__(self, index):
+    def __getitem__(self, index): ## TODO refactor for on-demand loading of data from disk
         datum = self.data_list[index]
         return (datum.x, datum.edge_index, datum.batch, datum.y)
     
-    def __len__(self):
+    def __len__(self): # return the length of the data list
         return len(self.data_list)
 
 
@@ -96,26 +103,28 @@ def load_data(args, device):
     return training_data, test_data, feature_length
 
 
+# splits and caches test/train data (or loads from cache file)
 def get_split_data(data, data_split_file, test_prop, recache):
-    if recache or not os.path.isfile(data_split_file):
+    if recache or not os.path.isfile(data_split_file): # do the split and save the cache file
         training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=test_prop)
         data_split_file = open(data_split_file, "wb")
         pickle.dump((training_data, test_data), data_split_file)
         data_split_file.close()
-    else:
+    else: # load from the cache file
         data_split_file = open(data_split_file, "rb")
         training_data, test_data = pickle.load(data_split_file)
         data_split_file.close()
     return training_data, test_data
 
 
+# splits and caches minibatches (or loads from cache file)
 def get_mini_batches(training_data, batch_size, minibatch_file, recache): ## TODO implement cache/load function to reduce repeated code
-    if recache or not os.path.isfile(minibatch_file):
+    if recache or not os.path.isfile(minibatch_file): # make minibatches and save the cache file
         training_data = torch.utils.data.DataLoader(dataset=training_data, batch_size=batch_size, shuffle=True)
         minibatch_file = open(minibatch_file, "wb")
         pickle.dump(training_data, minibatch_file)
         minibatch_file.close()
-    else:
+    else: # load from the cache file
         minibatch_file = open(minibatch_file, "rb")
         training_data = pickle.load(minibatch_file)
         minibatch_file.close()

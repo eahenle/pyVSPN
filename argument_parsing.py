@@ -1,6 +1,13 @@
 import argparse
 
 def parse_args():
+    """
+    args = parse_args()
+
+    Processes command line arguments and fills in defaults.  Run program with `-h` flag to see arg list.
+    """
+
+    # argument parsing object
     parser = argparse.ArgumentParser(
         prog="python main.py", description="MPNN training",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)

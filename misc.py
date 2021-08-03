@@ -1,5 +1,6 @@
 import torch
 
+# select CPU or GPU as compute device
 def choose_device(args):
     device_name = args.device
     if device_name == "cpu":
