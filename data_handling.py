@@ -2,6 +2,9 @@ import numpy
 import torch
 import torch_geometric
 import pandas
+import sklearn
+import os
+import pickle
 
 
 # load the serialized array representations of a graph, collate into a Data object, and send to device
@@ -17,11 +20,11 @@ def load_graph_arrays(xtal_name, y, device):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors as data object [and send to GPU]
-    datum = torch_geometric.data.Data(x = x, edge_index = edge_index, y = y, batch = torch.tensor([0])).to(device) ## TODO this can't be the right way to handle set2set
+    datum = torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0])).to(device) ## TODO load mini-batches via torch dataloader
     return datum
 
 
-def load_data(properties, target, device):
+def load_data(properties, target, device, data_split_file, test_prop, recache):
     """
     data, x_len = load_data(properties, target, device)
 
@@ -46,4 +49,20 @@ def load_data(properties, target, device):
     names = df["name"]
     data = [load_graph_arrays(names[i], df[target][i], device) for i in range(len(df.index))]
     feature_length = numpy.load("encoding_length.npy")
-    return data, feature_length
+
+    # split the data
+    training_data, test_data = get_split_data(data, data_split_file, test_prop, recache)
+    return training_data, test_data, feature_length
+
+
+def get_split_data(data, data_split_file, test_prop, recache):
+    if recache or not os.path.isfile(data_split_file):
+        training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=test_prop)
+        data_split_file = open(data_split_file, "wb")
+        pickle.dump((training_data, test_data), data_split_file)
+        data_split_file.close()
+    else:
+        data_split_file = open(data_split_file, "rb")
+        training_data, test_data = pickle.load(data_split_file)
+        data_split_file.close()
+    return training_data, test_data

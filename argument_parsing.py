@@ -6,47 +6,50 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     # required argument
-    parser.add_argument("target", help="Training target column")
+    parser.add_argument("target", help="Training target column.")
         
     # optional arguments
+    parser.add_argument("--data_split_file", default="./data_split.pkl",
+        help="Pickle file to store data after test/train splitting.")
+
     parser.add_argument("--device", default="cuda:0",
-        help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu")
+        help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
     
     parser.add_argument("--l1_reg", type=float, default=0,
-        help="Lambda hyperparameter for L1 regularization")
+        help="Lambda hyperparameter for L1 regularization.")
 
     parser.add_argument("--l2_reg", type=float, default=0,
-        help="Lambda hyperparameter for L2 regularization")
+        help="Lambda hyperparameter for L2 regularization.")
 
     parser.add_argument("--learning_rate", type=float, default=0.001,
-        help="Learning rate for gradient descent optimization (Adam)")
+        help="Learning rate for gradient descent optimization (Adam).")
     
     parser.add_argument("--max_epochs", type=int, default=10000,
-        help="Maximum number of training epochs")
+        help="Maximum number of training epochs.")
 
     parser.add_argument("--mpnn_steps", type=int, default=5,
-        help="Number of MPNN message propagation steps")
+        help="Number of MPNN message propagation steps.")
     
     parser.add_argument("--nb_reports", type=int, default=100,
-        help="Number of loss reports printed during training (if all epochs run)")
+        help="Number of loss reports printed during training (if all epochs run).")
 
     parser.add_argument("--node_encoding", type=int, default=100,
-        help="Length of nodes' hidden encoding vectors")
+        help="Length of nodes' hidden encoding vectors.")
 
     parser.add_argument("--properties", default="properties.csv",
-        help="File containing structure names and target values (CSV format)")
+        help="File containing structure names and target values (CSV format).")
 
-    parser.add_argument("--recache", type=bool, default=False,
-        help="Ignore and overwrite cache files")
+    parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
+        help="Ignore and overwrite cache files.")
 
     parser.add_argument("--stop_threshold", type=float, default=0.1,
-        help="Example-averaged loss threshold for early stopping")
+        help="Example-averaged loss threshold for early stopping.")
 
     parser.add_argument("--s2s_steps", type=int, default=5,
-        help="Number of processing steps for Set2Set")
+        help="Number of processing steps for Set2Set.")
 
     parser.add_argument("--test_prop", type=float, default=0.2,
-        help="Proportion of data to use for testing")
+        help="Proportion of data to use for testing. Ignored when loading test/train split from disk.")
     
     # process and return arguments
     args = parser.parse_args()
