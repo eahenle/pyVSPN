@@ -25,11 +25,8 @@ def parse_args():
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
     
-    parser.add_argument("--enc_len_file", default="input_data/encoding_length.npy",
-        help="Numpy file giving the length of the node feature vectors. Ignored if loading from cache.")
-    
-    parser.add_argument("--graph_folder", default="input_data/graphs",
-        help="Folder containing serialized numpy files for graph representations. Ignored if loading from cache.")
+    parser.add_argument("--input_path", default="./input_data",
+        help="Path to folder containing input files.")
     
     parser.add_argument("--l1_reg", type=float, default=0,
         help="Lambda hyperparameter for L1 regularization.")

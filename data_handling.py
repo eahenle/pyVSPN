@@ -38,11 +38,11 @@ class Dataset(torch.utils.data.Dataset):
 
 
 # load the serialized array representations of a graph, and collate into a Data object
-def load_graph_arrays(xtal_name, y, graph_folder):
+def load_graph_arrays(xtal_name, y, input_path):
     # read the arrays encoding the graph
-    edge_src = numpy.load(f"{graph_folder}/{xtal_name}_edges_src.npy")
-    edge_dst = numpy.load(f"{graph_folder}/{xtal_name}_edges_dst.npy")
-    node_fts = numpy.load(f"{graph_folder}/{xtal_name}_node_features.npy")
+    edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_edges_src.npy")
+    edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_edges_dst.npy")
+    node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_node_features.npy")
     
     # convert arrays to tensors
     x = torch.tensor(node_fts, dtype=torch.float)
@@ -79,16 +79,15 @@ def load_data(args, device):
     cache_path      = args.cache_path
     test_prop       = args.test_prop
     recache         = args.recache
-    graph_folder    = args.graph_folder
+    input_path      = args.input_path
     batch_size      = args.batch_size
-    enc_len_file    = args.enc_len_file
 
     # read the list of examples
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
-    data = [load_graph_arrays(names[i], df[target][i], graph_folder) for i in range(len(df.index))]
-    feature_length = numpy.load(enc_len_file)
+    data = [load_graph_arrays(names[i], df[target][i], input_path) for i in range(len(df.index))]
+    feature_length = numpy.load(f"{input_path}/encoding_length.npy")
 
     # split the data
     training_data, test_data = get_split_data(data, cache_path, test_prop, recache)
