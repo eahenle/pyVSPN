@@ -76,11 +76,10 @@ def load_data(args, device):
     # unpack args
     properties      = args.properties
     target          = args.target
-    data_split_file = args.data_split_file
+    cache_path      = args.cache_path
     test_prop       = args.test_prop
     recache         = args.recache
     graph_folder    = args.graph_folder
-    minibatch_file  = args.minibatch_file
     batch_size      = args.batch_size
     enc_len_file    = args.enc_len_file
 
@@ -92,40 +91,42 @@ def load_data(args, device):
     feature_length = numpy.load(enc_len_file)
 
     # split the data
-    training_data, test_data = get_split_data(data, data_split_file, test_prop, recache)
+    training_data, test_data = get_split_data(data, cache_path, test_prop, recache)
 
     # generate training Dataset object
     training_data = Dataset(training_data)
 
     # split into mini-batches
-    training_data = get_mini_batches(training_data, batch_size, minibatch_file, recache)
+    training_data = get_mini_batches(training_data, batch_size, cache_path, recache)
 
     return training_data, test_data, feature_length
 
 
 # splits and caches test/train data (or loads from cache file)
-def get_split_data(data, data_split_file, test_prop, recache):
-    if recache or not os.path.isfile(data_split_file): # do the split and save the cache file
+def get_split_data(data, cache_path, test_prop, recache):
+    cache_file = f"{cache_path}/data_split.pkl"
+    if recache or not os.path.isfile(cache_file): # do the split and save the cache file
         training_data, test_data = sklearn.model_selection.train_test_split(data, test_size=test_prop)
-        data_split_file = open(data_split_file, "wb")
-        pickle.dump((training_data, test_data), data_split_file)
-        data_split_file.close()
+        cache_file = open(cache_file, "wb")
+        pickle.dump((training_data, test_data), cache_file)
+        cache_file.close()
     else: # load from the cache file
-        data_split_file = open(data_split_file, "rb")
-        training_data, test_data = pickle.load(data_split_file)
-        data_split_file.close()
+        cache_file = open(cache_file, "rb")
+        training_data, test_data = pickle.load(cache_file)
+        cache_file.close()
     return training_data, test_data
 
 
 # splits and caches minibatches (or loads from cache file)
-def get_mini_batches(training_data, batch_size, minibatch_file, recache):
-    if recache or not os.path.isfile(minibatch_file): # make minibatches and save the cache file
+def get_mini_batches(training_data, batch_size, cache_path, recache):
+    cache_file = f"{cache_path}/minibatches.pkl"
+    if recache or not os.path.isfile(cache_file): # make minibatches and save the cache file
         training_data = torch.utils.data.DataLoader(dataset=training_data, batch_size=batch_size, shuffle=True)
-        minibatch_file = open(minibatch_file, "wb")
-        pickle.dump(training_data, minibatch_file)
-        minibatch_file.close()
+        cache_file = open(cache_file, "wb")
+        pickle.dump(training_data, cache_file)
+        cache_file.close()
     else: # load from the cache file
-        minibatch_file = open(minibatch_file, "rb")
-        training_data = pickle.load(minibatch_file)
-        minibatch_file.close()
+        cache_file = open(cache_file, "rb")
+        training_data = pickle.load(cache_file)
+        cache_file.close()
     return training_data

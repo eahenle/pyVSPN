@@ -1,4 +1,6 @@
+from genericpath import isdir
 import torch
+import os
 
 # select CPU or GPU as compute device
 def choose_device(args):
@@ -10,3 +12,9 @@ def choose_device(args):
     else:
         raise Exception("CUDA not available")
     return device
+
+
+# check for required folders
+def check_paths(args):
+    if not os.path.isdir(args.cache_path):
+        os.mkdir(args.cache_path)

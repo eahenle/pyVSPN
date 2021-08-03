@@ -18,9 +18,9 @@ def parse_args():
     # optional arguments
     parser.add_argument("--batch_size", type=int, default=10,
         help="Number of examples per mini-batch during training. Ignored when loading batches from disk.")
-
-    parser.add_argument("--data_split_file", default="./data_split.pkl",
-        help="Pickle file to cache data after test/train splitting.")
+    
+    parser.add_argument("--cache_path", default="./cache",
+        help="Path to folder containing cache pickle files.")
 
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
@@ -42,9 +42,6 @@ def parse_args():
     
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
-    
-    parser.add_argument("--minibatch_file", default="./minibatches.pkl",
-        help="Pickle file to cache training mini-batches.")
 
     parser.add_argument("--mpnn_steps", type=int, default=5,
         help="Number of MPNN message propagation steps.")
