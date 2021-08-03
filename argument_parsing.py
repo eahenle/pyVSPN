@@ -9,11 +9,20 @@ def parse_args():
     parser.add_argument("target", help="Training target column.")
         
     # optional arguments
-    parser.add_argument("--data_split_file", default="./data_split.pkl",
-        help="Pickle file to store data after test/train splitting.")
+    parser.add_argument("--batch_size", type=int, default=10,
+        help="Number of examples per mini-batch during training. Ignored when loading batches from disk.")
+
+    parser.add_argument("--data_split_file", default="./data_split.pkl", ## TODO combine all pkl args into one flag (pkl_path)
+        help="Pickle file to cache data after test/train splitting.")
 
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
+    
+    parser.add_argument("--enc_len_file", default="input_data/encoding_length.npy", ## TODO combine all input args into one flag (input_path)
+        help="Numpy file giving the length of the node feature vectors. Ignored if loading from cache.")
+    
+    parser.add_argument("--graph_folder", default="input_data/graphs",
+        help="Folder containing serialized numpy files for graph representations. Ignored if loading from cache.")
     
     parser.add_argument("--l1_reg", type=float, default=0,
         help="Lambda hyperparameter for L1 regularization.")
@@ -26,6 +35,9 @@ def parse_args():
     
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
+    
+    parser.add_argument("--minibatch_file", default="./minibatches.pkl",
+        help="Pickle file to cache training mini-batches.")
 
     parser.add_argument("--mpnn_steps", type=int, default=5,
         help="Number of MPNN message propagation steps.")
@@ -36,7 +48,7 @@ def parse_args():
     parser.add_argument("--node_encoding", type=int, default=100,
         help="Length of nodes' hidden encoding vectors.")
 
-    parser.add_argument("--properties", default="properties.csv",
+    parser.add_argument("--properties", default="input_data/properties.csv",
         help="File containing structure names and target values (CSV format).")
 
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,

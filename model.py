@@ -56,15 +56,14 @@ class Model(torch.nn.Module):
         self.prediction_layer = torch.nn.Linear(2 * hidden_encoding_length, 1)
     
     # forward-pass behavior
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
+    def forward(self, x, edge_index, batch):
         # transform input
         x = self.input_layer(x)
         x = self.relu(x)
         # do message passing
         x, _ = self.mpnn_layers(x, edge_index)
         # do readout
-        x = self.readout_layer(x, data.batch)
+        x = self.readout_layer(x, batch)
         # make prediction
         x = self.prediction_layer(x)
         return x
