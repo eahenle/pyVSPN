@@ -3,13 +3,11 @@ import torch
 import torch_geometric
 import pandas
 import sklearn
-import os
-import pickle
 
 from misc import cached
 
 
-class Dataset(torch.utils.data.Dataset):
+class Dataset(torch_geometric.data.Dataset):
     """
     data_set = Dataset(data_list)
 
@@ -33,7 +31,7 @@ class Dataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         datum = self.data_list[index]
-        return (datum.x, datum.edge_index, datum.batch, datum.y)
+        return (datum.x, datum.edge_index, datum.batch, datum.y, datum.nb_nodes, datum.nb_edges)
     
     def __len__(self): # return the length of the data list
         return len(self.data_list)
@@ -52,7 +50,7 @@ def load_graph_arrays(xtal_name, y, input_path):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors as data object [and send to GPU]
-    datum = torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0]))
+    datum = torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0]), nb_nodes=x.shape[0], nb_edges=edge_index.shape[1])
     return datum
 
 
@@ -107,5 +105,5 @@ def get_split_data(data, args):
 
 # splits and caches minibatches (or loads from cache file)
 def get_mini_batches(training_data, args):
-    f = lambda : torch.utils.data.DataLoader(dataset=training_data, batch_size=args.batch_size, shuffle=True)
+    f = lambda : torch_geometric.data.DataLoader(dataset=training_data, batch_size=args.batch_size, shuffle=True)
     return cached(f, "minibatches.pkl", args)

@@ -1,5 +1,14 @@
 import torch
 
+
+def un_pad_x(x, nb_nodes):
+    return x[range(nb_nodes),:]
+
+
+def un_pad_e(e, nb_edges):
+    return e[:,range(nb_edges)]
+
+
 # training routine
 def train(model, training_data, test_data, args):
     # unpack args
@@ -18,7 +27,10 @@ def train(model, training_data, test_data, args):
     for i in range(nb_epochs): # train for up to `nb_epochs` cycles
         epoch_loss = 0
         
-        for X,E,batch,y in training_data: # loop over minibatches
+        for X,E,batch,y,nb_nodes,nb_edges in training_data: # loop over minibatches
+            X = [un_pad_x(X[j], nb_nodes[j]) for j in range(len(nb_nodes))]
+            E = [un_pad_e(E[j], nb_edges[j]) for j in range(len(nb_edges))]
+            print(f"\nasdfasdf\n{E}\nasdfasdf\n")
             batch_loss = 0
             optimizer.zero_grad() # reset the gradients for the current batch
             y_hat = [model(X[j], E[j], batch[j]) for j in range(len(y))] # make predictions
