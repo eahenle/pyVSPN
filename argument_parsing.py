@@ -40,9 +40,6 @@ def parse_args():
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
     
-    parser.add_argument("--model_output", default="trained_model.pkl",
-        help="Path to pickle file for trained model.")
-    
     parser.add_argument("--mpnn_aggr", default="mean",
         help="Aggregation function for MPNN messages.")
 
@@ -60,6 +57,9 @@ def parse_args():
 
     parser.add_argument("--node_encoding", type=int, default=100,
         help="Length of nodes' hidden encoding vectors.")
+
+    parser.add_argument("--output_path", default="./output",
+        help="Path to output directory.")
 
     parser.add_argument("--properties", default="input_data/properties.csv",
         help="File containing structure names and target values (CSV format).")

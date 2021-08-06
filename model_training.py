@@ -21,12 +21,13 @@ def train(model, training_data, validation_data, loss_func, args):
     l2_reg = args.l2_reg
     nb_reports = args.nb_reports
     nb_checkpoints = args.nb_checkpoints
+    output_path = args.output_path
     # get validation targets
     validation_y = torch.tensor([datum.y for datum in validation_data])
     # Create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=l2_reg)
     # prep training curve record file
-    with open("training_curve.csv", "w") as f:
+    with open(f"{output_path}/training_curve.csv", "w") as f:
             f.write(f"Epoch,Training_MSE,Validation_MSE\n")
 
     for i in tqdm(range(nb_epochs), desc="Training", mininterval=5): # train for up to `nb_epochs` cycles
@@ -47,7 +48,7 @@ def train(model, training_data, validation_data, loss_func, args):
         validation_y_hat = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in validation_data])
         epoch_loss = loss_func(validation_y, validation_y_hat)
         
-        with open("training_curve.csv", "a") as f:
+        with open(f"{output_path}/training_curve.csv", "a") as f:
             f.write(f"{i},{training_loss/len(training_data)},{epoch_loss}\n")
 
         if early_stopping(epoch_loss.item(), args):

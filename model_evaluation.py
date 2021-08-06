@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import pandas
 
 def evaluate(model, test_data, loss_func, args):
+    output_path = args.output_path
+
     # evaluate test loss
     y_hat_test = [model(datum.x, datum.edge_index, datum.batch).item() for datum in test_data]
     y_test = [x.y.item() for x in test_data]
@@ -15,12 +17,12 @@ def evaluate(model, test_data, loss_func, args):
     plt.xlabel("Target Value (mmol/g)")
     plt.ylabel("Predicted Value (mmol/g)")
     plt.title(f"Test Accuracy (MSE = {test_loss})")
-    fig.colorbar(im[3]) ## TODO colorbar
+    fig.colorbar(im[3])
     plt.plot([0, ax.get_xlim()[1]], [0, ax.get_ylim()[1]], c="white", linestyle="--")
-    plt.savefig("test_accuracy.png") ## TODO flag for where to save
+    plt.savefig(f"{output_path}/test_accuracy.png")
 
     # generate training curve
-    training_curves = pandas.read_csv("training_curve.csv")
+    training_curves = pandas.read_csv(f"{output_path}/training_curve.csv")
     epoch = training_curves["Epoch"]
     validation_loss = training_curves["Validation_MSE"]
     training_loss = training_curves["Training_MSE"]
@@ -31,5 +33,5 @@ def evaluate(model, test_data, loss_func, args):
     plt.ylabel("MSE")
     plt.title("Loss Curves")
     plt.legend()
-    plt.savefig("training_curve.png")
+    plt.savefig(f"{output_path}/training_curve.png")
 
