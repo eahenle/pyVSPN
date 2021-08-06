@@ -4,7 +4,7 @@ import torch_geometric
 import pandas
 import sklearn
 
-from misc import cached
+from helper_functions import cached
 
 
 class Dataset(torch_geometric.data.Dataset):

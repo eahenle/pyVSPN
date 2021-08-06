@@ -1,4 +1,6 @@
 __pycache__/
-graphs/
-cache
-input_data
+cache/
+input_data/
+*.csv
+*.png
+*.pkl

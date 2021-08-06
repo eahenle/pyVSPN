@@ -1,4 +1,5 @@
 import torch
+import pickle
 
 
 def un_pad_x(x, nb_nodes):
@@ -10,7 +11,7 @@ def un_pad_e(e, nb_edges):
 
 
 # training routine
-def train(model, training_data, test_data, args):
+def train(model, training_data, validation_data, loss_func, args):
     # unpack args
     nb_epochs = args.max_epochs
     stopping_threshold = args.stop_threshold
@@ -18,20 +19,18 @@ def train(model, training_data, test_data, args):
     l1_reg = args.l1_reg
     l2_reg = args.l2_reg
     nb_reports = args.nb_reports
+    # get validation targets
+    validation_y = torch.tensor([datum.y for datum in validation_data])
     # Create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=l2_reg)
-    # Define loss function
-    loss_func = torch.nn.MSELoss()
-    # train the model
-    model.train()
+    # prep training curve record file
+    with open("training_curve.csv", "w") as f:
+            f.write(f"Epoch,Validation_MSE\n")
+
     for i in range(nb_epochs): # train for up to `nb_epochs` cycles
-        epoch_loss = 0
-        
         for X,E,batch,y,nb_nodes,nb_edges in training_data: # loop over minibatches
             X = [un_pad_x(X[j], nb_nodes[j]) for j in range(len(nb_nodes))]
             E = [un_pad_e(E[j], nb_edges[j]) for j in range(len(nb_edges))]
-            print(f"\nasdfasdf\n{E}\nasdfasdf\n")
-            batch_loss = 0
             optimizer.zero_grad() # reset the gradients for the current batch
             y_hat = [model(X[j], E[j], batch[j]) for j in range(len(y))] # make predictions
             losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses
@@ -39,8 +38,13 @@ def train(model, training_data, test_data, args):
             batch_loss += l1_reg * sum([torch.sum(abs(params)) for params in model.parameters()]) # L1 regularization
             batch_loss.backward() # do back-propagation to get gradients
             optimizer.step() # update weights
-            epoch_loss += batch_loss
+
+        validation_y_hat = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in validation_data])
+        epoch_loss = loss_func(validation_y, validation_y_hat)
         
+        with open("training_curve.csv", "a") as f:
+            f.write(f"{i},{epoch_loss}\n")
+
         if epoch_loss.item() < stopping_threshold: # evaluate early stopping
             print(f"Breaking training loop at iteration {i}\n")
             break
@@ -48,9 +52,6 @@ def train(model, training_data, test_data, args):
         if i % (nb_epochs // nb_reports) == 0: # print training reports
             print(f"Epoch\t{i}\t\t|\tLoss\t{epoch_loss}")
         
-    # evaluate test loss
-    model.eval()
-    y_hat_test = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in test_data])
-    y_test = torch.tensor([x.y for x in test_data])
-    test_loss = loss_func(y_hat_test, y_test)
-    print(f"\nTest loss: {test_loss}\n")
+        if i % (nb_epochs // nb_reports) == 0: # save model ## TODO add flag for checkpoint frequency
+            with open("model_checkpoint.pkl", "wb") as f:
+                pickle.dump(model, f)
