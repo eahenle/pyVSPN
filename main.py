@@ -16,11 +16,11 @@ def main():
     # check for required folders
     check_paths(args)
 
-    # select training device (CPU/GPU)
-    device = choose_device(args)
+    # select training device (CPU/GPU) and get handle for cpu
+    device, cpu = choose_device(args)
 
     # load data [and send to device]
-    training_data, test_data, feature_length = load_data(args) ## TODO validation data (currently using test data for validation)
+    training_data, validation_data, test_data, feature_length = load_data(args, device)
 
     # instantiate the model [and send to device]
     model = Model(feature_length, args).to(device)
@@ -30,19 +30,15 @@ def main():
 
     # run the training loop
     model.train() # set training mode
-    train(model, training_data, test_data, loss_func, args)
+    train(model, training_data, validation_data, loss_func, args)
 
     # evaluate the model
     model.eval() # set evaluation mode
-    evaluate(model, test_data, loss_func)
+    model.to(cpu)
+    evaluate(model, test_data, loss_func, args)
 
     # save model
-    save_model(model)
-
-    # inspect model parameters
-    print("Model params:")
-    for param in model.parameters():
-        print(param)
+    save_model(model, args)
 
 
 if __name__ == "__main__":

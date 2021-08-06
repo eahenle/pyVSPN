@@ -11,7 +11,7 @@ def choose_device(args):
         device = torch.device(device_name)
     else:
         raise Exception("CUDA not available")
-    return device
+    return device, torch.device("cpu")
 
 
 # check for required folders
@@ -38,6 +38,10 @@ def cached(f, cache_file, args):
     return output
 
 
-def save_model(model):
-    with open("trained_model.pkl", "wb") as f:
+def save_model(model, args):
+    with open(f"{args.model_output}", "wb") as f:
         pickle.dump(model, f)
+
+
+def save_checkpoint(model, args):
+    cached(lambda : model, "model_checkpoint.pkl", args)

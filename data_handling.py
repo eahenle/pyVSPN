@@ -54,7 +54,7 @@ def load_graph_arrays(xtal_name, y, input_path):
     return datum
 
 
-def load_data(args):
+def load_data(args, device):
     """
     Reads a collection of files from disk to build the data collection for working with the MPNN
     """
@@ -74,6 +74,7 @@ def load_data(args):
 
     # split the data
     training_data, test_data = get_split_data(data, args)
+    training_data, validation_data = get_split_data(training_data, args)
 
     # generate training Dataset object
     training_data = Dataset(training_data)
@@ -81,16 +82,18 @@ def load_data(args):
     # split into mini-batches
     training_data = get_mini_batches(training_data, args)
 
-    return training_data, test_data, feature_length
+    return training_data, validation_data, test_data, feature_length
 
 
 # splits and caches test/train data (or loads from cache file)
 def get_split_data(data, args):
-    f = lambda : sklearn.model_selection.train_test_split(data, test_size=args.test_prop)
+    test_prop = args.test_prop
+    f = lambda : sklearn.model_selection.train_test_split(data, test_size=test_prop)
     return cached(f, "data_split.pkl", args)
 
 
 # splits and caches minibatches (or loads from cache file)
 def get_mini_batches(training_data, args):
-    f = lambda : torch_geometric.data.DataLoader(dataset=training_data, batch_size=args.batch_size, shuffle=True)
+    batch_size = args.batch_size
+    f = lambda : torch_geometric.data.DataLoader(dataset=training_data, batch_size=batch_size, shuffle=True)
     return cached(f, "minibatches.pkl", args)
