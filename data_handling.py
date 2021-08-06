@@ -65,7 +65,7 @@ def load_data(args):
 
     # read the list of examples
     print("Reading example properties...")
-    df = pandas.read_csv(properties)
+    df = cached(lambda : pandas.read_csv(properties), "properties.pkl", args)
     # load in the data for each example
     names = df["name"]
     print("Loading data...")

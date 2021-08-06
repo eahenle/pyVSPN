@@ -39,6 +39,11 @@ def main():
     # save model
     save_model(model)
 
+    # inspect model parameters
+    print("Model params:")
+    for param in model.parameters():
+        print(param)
+
 
 if __name__ == "__main__":
     main()

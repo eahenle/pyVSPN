@@ -39,9 +39,15 @@ def parse_args():
     
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
+    
+    parser.add_argument("--mpnn_aggr", default="mean",
+        help="Aggregation function for MPNN messages.")
 
     parser.add_argument("--mpnn_steps", type=int, default=5,
         help="Number of MPNN message propagation steps.")
+    
+    parser.add_argument("--mpnn_update", default="mean",
+        help="Name of node update function for MPNN layers.")
     
     parser.add_argument("--nb_reports", type=int, default=100,
         help="Number of loss reports printed during training (if all epochs run).")

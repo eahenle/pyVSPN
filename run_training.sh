@@ -16,4 +16,5 @@ python3 main.py                             \
     --stop_threshold    0.5                 \
     --s2s_steps         2                   \
     --test_prop         0.2                 \
+    --mpnn_update       mgu                 \
     --recache

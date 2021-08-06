@@ -1,6 +1,5 @@
 import torch
 import torch_geometric
-import numpy
 
 class MPNN(torch_geometric.nn.MessagePassing):
     """
@@ -11,19 +10,19 @@ class MPNN(torch_geometric.nn.MessagePassing):
     """
     
     # constructor
-    def __init__(self, hidden_size, mpnn_steps, msg_aggr, update_func):
+    def __init__(self, mpnn_steps, hidden_size, msg_aggr, update_func):
         assert mpnn_steps > 0
         super(MPNN, self).__init__(aggr=msg_aggr)
         self.mpnn_steps = mpnn_steps
         assert update_func == "mean" or update_func == "mgu"
         self.update_func = update_func
         if update_func == "mgu":
-            self.W_f = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size, hidden_size)), requires_grad=True)
-            self.U_f = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size, hidden_size)), requires_grad=True)
-            self.b_f = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size)), requires_grad=True)
-            self.W_h = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size, hidden_size)), requires_grad=True)
-            self.U_h = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size, hidden_size)), requires_grad=True)
-            self.b_h = torch.nn.Parameter(torch.tensor(numpy.random.rand(hidden_size)), requires_grad=True)
+            self.W_f = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
+            self.U_f = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
+            self.b_f = torch.nn.Parameter(torch.randn(hidden_size), requires_grad=True)
+            self.W_h = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
+            self.U_h = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
+            self.b_h = torch.nn.Parameter(torch.randn(hidden_size), requires_grad=True)
             self.sigma_g = torch.nn.Sigmoid()
             self.phi_h = torch.nn.Tanh()
     
@@ -45,8 +44,18 @@ class MPNN(torch_geometric.nn.MessagePassing):
 
     # update function: mgu
     def update_mgu(self, m, h):
-        f_t = self.sigma_g(self.W_f * m + self.U_f * h + self.b_f)
-        h_hat_t = self.phi_h(self.W_h * m + self.U_h * (f_t * h) + self.b_h)
+        Wfm = torch.matmul(self.W_f, torch.transpose(m, 0, 1))
+        Ufh = torch.matmul(self.U_f, torch.transpose(h, 0, 1))
+        f_t = torch.transpose(Wfm + Ufh, 0, 1)
+        for i in range(f_t.shape[0]):
+            f_t[i,:] += self.b_f
+        f_t = self.sigma_g(f_t)
+        Whm = torch.matmul(self.W_h, torch.transpose(m, 0, 1))
+        Uhm = torch.matmul(self.U_h, torch.transpose(f_t * h, 0, 1))
+        h_hat_t = torch.transpose(Whm + Uhm, 0, 1)
+        for i in range(h_hat_t.shape[0]):
+            h_hat_t[i,:] += self.b_h
+        h_hat_t = self.phi_h(h_hat_t)
         return (1 - f_t) * h + f_t * h_hat_t
 
     # update function switch
@@ -67,7 +76,7 @@ class Model(torch.nn.Module):
     """
 
     # constructor
-    def __init__(self, node_encoding_length, args, mpnn_aggr="mean", mpnn_update="mean"):
+    def __init__(self, node_encoding_length, args):
         # unpack args
         hidden_encoding_length = args.node_encoding
         mpnn_steps = args.mpnn_steps
@@ -82,7 +91,7 @@ class Model(torch.nn.Module):
         # input layer transforms encoding to hidden encoding length 
         self.input_layer = torch.nn.Linear(node_encoding_length, hidden_encoding_length)
         # MPNN develops latent representation
-        self.mpnn_layers = MPNN(mpnn_steps, hidden_encoding_length, mpnn_aggr, mpnn_update)
+        self.mpnn_layers = MPNN(mpnn_steps, hidden_encoding_length, args.mpnn_aggr, args.mpnn_update)
         # readout layer reduces node encoding matrix to fixed-length vector
         self.readout_layer = torch_geometric.nn.Set2Set(hidden_encoding_length, s2s_steps)
         # prediction layer returns prediction from graph encoding vector
