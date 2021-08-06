@@ -17,7 +17,7 @@ def main():
     device = choose_device(args)
 
     # load data [and send to device]
-    training_data, test_data, feature_length = load_data(args, device)
+    training_data, test_data, feature_length = load_data(args)
 
     # instantiate the model [and send to device]
     model = Model(feature_length, args).to(device)

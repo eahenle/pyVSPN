@@ -54,24 +54,9 @@ def load_graph_arrays(xtal_name, y, input_path):
     return datum
 
 
-def load_data(args, device):
+def load_data(args):
     """
-    data, x_len = load_data(properties, target, device)
-
     Reads a collection of files from disk to build the data collection for working with the MPNN
-
-    Arguments
-    - properties: a string naming the CSV file from which to read structure names and target values
-    - target: a string naming the column containing the target values
-    - device: a string identifying the device to use for computations
-
-    External Inputs
-    - .npy files in graphs/: containing the node features and adjacency list information
-    - encoding_length.npy: containing the length of the node feature vectors
-
-    Outputs
-    - data: a list of pytorch Data objects, containing node features (data[i].x), adjacency lists (data[i].edge_index), and target values (data[i].y)
-    - feature_length: the length of the node feature vectors
     """
     # unpack args
     properties  = args.properties
@@ -79,9 +64,11 @@ def load_data(args, device):
     input_path  = args.input_path
 
     # read the list of examples
+    print("Reading example properties...")
     df = pandas.read_csv(properties)
     # load in the data for each example
     names = df["name"]
+    print("Loading data...")
     data = [load_graph_arrays(names[i], df[target][i], input_path) for i in range(len(df.index))]
     feature_length = numpy.load(f"{input_path}/encoding_length.npy")
 
