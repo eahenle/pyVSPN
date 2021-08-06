@@ -16,8 +16,11 @@ def choose_device(args):
 
 # check for required folders
 def check_paths(args):
-    if not os.path.isdir(args.cache_path):
-        os.mkdir(args.cache_path)
+    assert os.path.isdir(args.input_path)
+    dirs = [args.cache_path, args.output_path]
+    for dir in dirs:
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
 
 
 def cached(f, cache_file, args):
@@ -39,7 +42,7 @@ def cached(f, cache_file, args):
 
 
 def save_model(model, args):
-    with open(f"{args.model_output}", "wb") as f:
+    with open(f"{args.output_path}/trained_model.pkl", "wb") as f:
         pickle.dump(model, f)
 
 
