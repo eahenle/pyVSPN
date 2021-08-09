@@ -78,9 +78,6 @@ def load_data(args, device):
     validation_data = load_data_list(validation_split, args)
     test_data = load_data_list(test_split, args)
 
-    # put validation set on compute device
-    #validation_data.to(device) ## TODO put data list to device?
-
     # set up training dataset
     training_data = Dataset(training_data, cache_path)
 
@@ -116,7 +113,6 @@ def get_mini_batches(data, args):
         batch = []
         for _ in range(batch_size): # build a list of between 1 and batch_size indices
             if len(data) > 0:
-                ## TODO print(f"\nasdfasdf\n{data[:]}\nasdfasdf\n")
                 batch.append(data.pop())
             else:
                 break

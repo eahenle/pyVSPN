@@ -3,8 +3,8 @@ import torch
 from model_definition import Model
 from model_training import train
 from data_handling import load_data
-from argument_parsing import parse_args, print_args
-from helper_functions import choose_device, check_paths, save_model
+from argument_parsing import parse_args
+from helper_functions import choose_device, check_paths, save_model, print_args, write_args
 from model_evaluation import evaluate
 
 
@@ -12,6 +12,7 @@ def main():
     # get command line args (or defaults) and print them
     args = parse_args()
     print_args(args)
+    write_args(args)
 
     # check for required folders
     check_paths(args)

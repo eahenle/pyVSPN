@@ -79,12 +79,3 @@ def parse_args():
     # process and return arguments
     args = parser.parse_args()
     return args
-
-
-def print_args(args):
-    print("\nARGS")
-    print("########################################")
-    arg_dict = vars(args)
-    for key in arg_dict:
-        print(f"{key}: {arg_dict[key]}")
-    print("########################################\n")

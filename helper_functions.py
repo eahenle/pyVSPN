@@ -52,3 +52,24 @@ def save_model(model, args):
 
 def save_checkpoint(model, args):
     cached(lambda : model, "model_checkpoint.pkl", args)
+
+
+def print_args(args):
+    print("\nARGS")
+    print("########################################")
+    print(args_string(args))
+    print("########################################\n")
+
+
+def args_string(args):
+    argstr = ""
+    arg_dict = vars(args)
+    for key in arg_dict:
+        argstr += f"{key}: {arg_dict[key]}\n"
+    return argstr
+
+
+def write_args(args):
+    output_path = args.output_path
+    with open(f"{output_path}/args.txt", "w") as f:
+        f.write(args_string(args))
