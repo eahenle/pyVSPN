@@ -4,16 +4,10 @@ from tqdm import tqdm
 from helper_functions import save_checkpoint
 
 
-def un_pad_x(x, nb_nodes):
-    return x[range(nb_nodes),:]
-
-
-def un_pad_e(e, nb_edges):
-    return e[:,range(nb_edges)]
-
-
 # training routine
 def train(model, training_data, validation_data, loss_func, args):
+    assert len(training_data) > 0
+    assert len(validation_data) > 0
     # unpack args
     nb_epochs = args.max_epochs
     learning_rate = args.learning_rate
@@ -32,11 +26,14 @@ def train(model, training_data, validation_data, loss_func, args):
 
     for i in tqdm(range(nb_epochs), desc="Training", mininterval=5): # train for up to `nb_epochs` cycles
         training_loss = 0
-        for X,E,batch,y,nb_nodes,nb_edges in training_data: # loop over minibatches
-            X = [un_pad_x(X[j], nb_nodes[j]) for j in range(len(nb_nodes))]
-            E = [un_pad_e(E[j], nb_edges[j]) for j in range(len(nb_edges))]
+        for batch in training_data: # loop over minibatches
+            # unpack data list
+            X = [datum.x for datum in batch]
+            E = [datum.edge_index for datum in batch]
+            y = [datum.y for datum in batch]
+            b = [datum.batch for datum in batch]
             optimizer.zero_grad() # reset the gradients for the current batch
-            y_hat = [model(X[j], E[j], batch[j]) for j in range(len(y))] # make predictions
+            y_hat = [model(X[j], E[j], b[j]) for j in range(len(y))] # make predictions
             losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses
             batch_loss = sum(losses) / len(training_data) # accumulate normalized losses
             training_loss += batch_loss

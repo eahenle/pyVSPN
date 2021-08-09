@@ -2,6 +2,7 @@ import torch
 import os
 import pickle
 
+
 # select CPU or GPU as compute device
 def choose_device(args):
     device_name = args.device
@@ -17,7 +18,10 @@ def choose_device(args):
 # check for required folders
 def check_paths(args):
     assert os.path.isdir(args.input_path)
-    dirs = [args.cache_path, args.output_path]
+    cache_path = args.cache_path
+    output_path = args.output_path
+    graph_cache = f"{cache_path}/graphs"
+    dirs = [cache_path, output_path, graph_cache]
     for dir in dirs:
         if not os.path.isdir(dir):
             os.mkdir(dir)
