@@ -66,9 +66,12 @@ def parse_args():
 
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
         help="Ignore and overwrite cache files.")
+    
+    parser.add_argument("--stalling_threshold", type=float, default=0.0001,
+        help="If 3 consecutive validation losses have percent standard deviation less than this value, training stops.")
 
     parser.add_argument("--stop_threshold", type=float, default=0.1,
-        help="Example-averaged loss threshold for early stopping.")
+        help="Validation loss threshold for early stopping.")
 
     parser.add_argument("--s2s_steps", type=int, default=5,
         help="Number of processing steps for Set2Set.")

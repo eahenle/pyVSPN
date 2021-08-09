@@ -1,4 +1,6 @@
 import torch
+import statistics
+import numpy
 from tqdm import tqdm
 
 from helper_functions import save_checkpoint
@@ -20,48 +22,84 @@ def train(model, training_data, validation_data, loss_func, args):
     validation_y = torch.tensor([datum.y for datum in validation_data])
     # Create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=l2_reg)
-    # prep training curve record file
+    # open training log file
     with open(f"{output_path}/training_curve.csv", "w") as f:
-            f.write(f"Epoch,Training_MSE,Validation_MSE\n")
-
-    for i in tqdm(range(nb_epochs), desc="Training", mininterval=5): # train for up to `nb_epochs` cycles
-        training_loss = 0
-        for batch in training_data: # loop over minibatches
-            # unpack data list
-            X = [datum.x for datum in batch]
-            E = [datum.edge_index for datum in batch]
-            y = [datum.y for datum in batch]
-            b = [datum.batch for datum in batch]
-            optimizer.zero_grad() # reset the gradients for the current batch
-            y_hat = [model(X[j], E[j], b[j]) for j in range(len(y))] # make predictions
-            losses = [loss_func(y_hat[j], y[j]) for j in range(len(y))] # calculate losses
-            batch_loss = sum(losses) / len(training_data) # accumulate normalized losses
-            training_loss += batch_loss
-            batch_loss += l1_reg * sum([torch.sum(abs(params)) for params in model.parameters()]) # L1 regularization
-            batch_loss.backward() # do back-propagation to get gradients
-            optimizer.step() # update weights
-
-        # calculate epoch loss on validation set
-        validation_y_hat = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in validation_data])
-        epoch_loss = loss_func(validation_y, validation_y_hat)
+        # write column headers
+        f.write(f"Update,Training_MSE,Validation_MSE\n")
+        # train for up to `nb_epochs` cycles
+        updates = 0
+        validation_loss_history = [numpy.inf, numpy.inf, numpy.inf]
+        breakout = False
+        for epoch_num in tqdm(range(nb_epochs), desc="Training", mininterval=5):
+            training_loss = 0
+            validation_loss = 0
+            for batch in training_data: # loop over minibatches
+                # unpack data list
+                X = [datum.x for datum in batch]
+                E = [datum.edge_index for datum in batch]
+                y = torch.tensor([datum.y for datum in batch])
+                b = [datum.batch for datum in batch]
+                # reset the gradients for the current mini-batch
+                optimizer.zero_grad()
+                # make predictions
+                training_y_hat = torch.tensor([model(X[j], E[j], b[j]) for j in range(len(batch))])
+                validation_y_hat = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in validation_data])
+                # calculate batch loss and add to epoch training loss
+                batch_loss = loss_func(training_y_hat, y)
+                training_loss += batch_loss / len(training_data)
+                validation_loss = loss_func(validation_y, validation_y_hat)
+                f.write(f"{updates},{training_loss},{validation_loss}\n")
+                # check early stopping criteria
+                stop, validation_loss_history = early_stopping(validation_loss.item(), validation_loss_history, args)
+                if stop:
+                    breakout = True
+                    break
+                # apply L1 regularization
+                batch_loss += l1_reg * sum([torch.sum(abs(params)) for params in model.parameters()])
+                batch_loss.backward() # do back-propagation to get gradients
+                optimizer.step() # update weights
+                updates += 1
         
-        with open(f"{output_path}/training_curve.csv", "a") as f:
-            f.write(f"{i},{training_loss/len(training_data)},{epoch_loss}\n")
-
-        if early_stopping(epoch_loss.item(), args):
-            break
-        
-        if i % (nb_epochs // nb_reports) == 0: # print training reports
-            print(f"Epoch\t{i}\t\t|\tLoss\t{epoch_loss}")
-        
-        if i % (nb_epochs // nb_checkpoints) == 0: # save model in case of training interruption
-            save_checkpoint(model, args)
+            # print training reports
+            if epoch_num % (nb_epochs // nb_reports) == 0:
+                print(f"Epoch\t{epoch_num}\t\t|\tLoss\t{validation_loss}")
+            
+            if breakout:
+                break
+            
+            # save model in case of training interruption
+            if epoch_num % (nb_epochs // nb_checkpoints) == 0:
+                save_checkpoint(model, args)
 
 
 # evaluate early stopping
-def early_stopping(epoch_loss, args):
+def early_stopping(validation_loss, validation_loss_history, args):
     stopping_threshold = args.stop_threshold
-    if epoch_loss < stopping_threshold:
-        return True
-    else:
-        return False
+    stalling_threshold = args.stalling_threshold
+    stop1 = False
+    stop2 = False
+    stop3 = False
+    # stop training if validation loss gets low enough
+    if validation_loss < stopping_threshold:
+        stop1 = True
+    # stop training if training loss increases several epochs in a row
+    trues = 0
+    for i in range(len(validation_loss_history)):
+        if i == 0:
+            continue
+        if validation_loss_history[i] > validation_loss_history[i-1] and validation_loss > validation_loss_history[i]:
+            trues += 1
+        else:
+            trues = 0
+    if trues == len(validation_loss_history):
+        stop2 = True
+    # if % stdev over several epochs under threshold, end
+    if statistics.pstdev(validation_loss_history) / validation_loss < stalling_threshold:
+        stop3 = True
+    
+    validation_loss_history.pop(0)
+    validation_loss_history.append(validation_loss)
+
+    stop = any([stop1, stop2, stop3])
+
+    return stop, validation_loss_history
