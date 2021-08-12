@@ -98,7 +98,7 @@ class Model(torch.nn.Module):
         self.prediction_layer = torch.nn.Linear(hidden_encoding_length, 1)
     
     # forward-pass behavior
-    def forward(self, x, edge_index, batch):
+    def forward(self, x, edge_index):
         # transform input
         x = self.input_layer(x)
         # ReLU activation
@@ -106,6 +106,6 @@ class Model(torch.nn.Module):
         # do message passing
         x, _ = self.mpnn_layers(x, edge_index)
         # do readout to grpah-level encoding vector
-        x = [torch.mean(x[:,i]) for i in range(x.shape[1])]
+        x = torch.tensor([torch.mean(x[:,i]) for i in range(x.shape[1])])
         # make prediction
         return self.prediction_layer(x)
