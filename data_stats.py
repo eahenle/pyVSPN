@@ -23,6 +23,9 @@ def get_node_counts():
 def main():
     args = {"cache_path": ".", "recache": False}
     node_counts = cached(lambda : get_node_counts(), "node_counts.pkl", args)
+
+    args = {"cache_path": "cache", "recache": False}
+    train, validate, test = cached(lambda : None, "data_split.pkl", args)
     
     plt.hist(node_counts) ## TODO based on results, remove graphs > 500 nodes
     plt.title("Node Count Histogram")
@@ -31,6 +34,9 @@ def main():
     plt.savefig("node_counts.png")
 
     print(f"Max Node Count: {max(node_counts)}")
+    print(f"Training Set Size: {len(train)}")
+    print(f"Validation Set Size: {len(validate)}")
+    print(f"Testing Set Size: {len(test)}")
 
 if __name__ == "__main__":
     main()

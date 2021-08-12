@@ -30,22 +30,17 @@ def train(model, training_data, validation_data, loss_func, args):
         updates = 0
         validation_loss_history = [numpy.inf, numpy.inf, numpy.inf]
         breakout = False
-        for epoch_num in tqdm(range(nb_epochs), desc="Training Epochs"):
+        for epoch_num in range(nb_epochs):
             training_loss = 0
             validation_loss = 0
-            for batch in training_data: # loop over minibatches
-                # unpack data list
-                X = [datum.x for datum in batch]
-                E = [datum.edge_index for datum in batch]
-                y = torch.tensor([datum.y for datum in batch])
-                b = [datum.batch for datum in batch]
+            for batch in tqdm(training_data, desc=f"Training Epoch {epoch_num}"): # loop over minibatches
                 # reset the gradients for the current mini-batch
                 optimizer.zero_grad()
                 # make predictions
-                training_y_hat = torch.tensor([model(X[j], E[j], b[j]) for j in range(len(batch))])
-                validation_y_hat = torch.tensor([model(datum.x, datum.edge_index, datum.batch) for datum in validation_data])
+                training_y_hat = torch.tensor([model(batch[j].x, batch[j].edge_index) for j in range(len(batch))])
+                validation_y_hat = torch.tensor([model(datum.x, datum.edge_index) for datum in validation_data])
                 # calculate batch loss and add to epoch training loss
-                batch_loss = loss_func(training_y_hat, y)
+                batch_loss = loss_func(training_y_hat, torch.tensor([datum.y for datum in batch]))
                 training_loss += batch_loss / len(training_data)
                 validation_loss = loss_func(validation_y, validation_y_hat)
                 f.write(f"{updates},{training_loss},{validation_loss}\n")

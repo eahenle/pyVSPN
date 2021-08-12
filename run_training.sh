@@ -15,5 +15,6 @@ python3 main.py                             \
     --hidden_encoding   20                  \
     --stop_threshold    0.01                \
     --test_prop         0.1                 \
+    --val_prop          0.001               \
     --mpnn_update       mean                \
     #--recache

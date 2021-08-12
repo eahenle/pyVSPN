@@ -59,7 +59,6 @@ def load_data(args, device):
     cache_path  = args.cache_path
 
     # read the list of examples
-    print("Reading example properties...")
     df = cached(lambda : pandas.read_csv(properties), "properties.pkl", args)
     feature_length = numpy.load(f"{input_path}/encoding_length.npy")
 
@@ -88,6 +87,8 @@ def load_data(args, device):
 def get_split_data(names, args):
     assert len(names) > 0
     test_prop = args.test_prop
+    val_prop = args.val_prop
+    assert test_prop + val_prop < 0.5
 
     # make shuffled list of data indices
     indices = [i for i,_ in enumerate(names)]
@@ -95,11 +96,12 @@ def get_split_data(names, args):
 
     # determine how many indices go into test and validation sets
     test_cut = int(test_prop * len(names))
+    val_cut = int(val_prop * len(names))
 
     # cut the data into sets
     test_data = [names[i] for i in indices[0:test_cut]]
-    validation_data = [names[i] for i in indices[test_cut:2*test_cut]]
-    training_data = [names[i] for i in indices[2*test_cut:]]
+    validation_data = [names[i] for i in indices[test_cut:test_cut+val_cut]]
+    training_data = [names[i] for i in indices[test_cut+val_cut:]]
 
     return training_data, validation_data, test_data
 

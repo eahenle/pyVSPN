@@ -79,6 +79,9 @@ def parse_args():
     parser.add_argument("--test_prop", type=float, default=0.2,
         help="Proportion of data to use for testing. Ignored when loading test/train split from disk.")
     
+    parser.add_argument("--val_prop", type=float, default=0.01,
+        help="Proportion of data to use for validation. Ignored when loading test/train split from disk.")
+    
     # process and return arguments
     args = parser.parse_args()
     return args

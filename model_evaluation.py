@@ -6,7 +6,7 @@ def evaluate(model, test_data, loss_func, args):
     output_path = args.output_path
 
     # evaluate test loss
-    y_hat_test = [model(datum.x, datum.edge_index, datum.batch).item() for datum in test_data]
+    y_hat_test = [model(datum.x, datum.edge_index).item() for datum in test_data]
     y_test = [x.y.item() for x in test_data]
     test_loss = loss_func(torch.tensor(y_hat_test), torch.tensor(y_test))
     print(f"\nTest loss: {test_loss}\n")
