@@ -24,6 +24,12 @@ def parse_args():
 
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
+
+    parser.add_argument("--hidden_encoding", type=int, default=100,
+        help="Length of nodes' hidden encoding vectors.")
+    
+    parser.add_argument("--input_encoding", type=int, default=10,
+        help="Length of nodes' input layer encoding vectors.")
     
     parser.add_argument("--input_path", default="./input_data",
         help="Path to folder containing input files.")
@@ -55,13 +61,10 @@ def parse_args():
     parser.add_argument("--nb_reports", type=int, default=100,
         help="Number of loss reports printed during training (if all epochs run).")
 
-    parser.add_argument("--node_encoding", type=int, default=100,
-        help="Length of nodes' hidden encoding vectors.")
-
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
 
-    parser.add_argument("--properties", default="input_data/properties.csv",
+    parser.add_argument("--target_data", default="input_data/targets.csv",
         help="File containing structure names and target values (CSV format).")
 
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
@@ -72,9 +75,6 @@ def parse_args():
 
     parser.add_argument("--stop_threshold", type=float, default=0.1,
         help="Validation loss threshold for early stopping.")
-
-    parser.add_argument("--s2s_steps", type=int, default=5,
-        help="Number of processing steps for Set2Set.")
 
     parser.add_argument("--test_prop", type=float, default=0.2,
         help="Proportion of data to use for testing. Ignored when loading test/train split from disk.")

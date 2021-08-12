@@ -10,11 +10,12 @@ class MPNN(torch_geometric.nn.MessagePassing):
     """
     
     # constructor
-    def __init__(self, mpnn_steps, hidden_size, msg_aggr, update_func):
+    def __init__(self, mpnn_steps, input_size, hidden_size, msg_aggr, update_func):
         assert mpnn_steps > 0
+        assert hidden_size > input_size
+        assert update_func == "mean" or update_func == "mgu"
         super(MPNN, self).__init__(aggr=msg_aggr)
         self.mpnn_steps = mpnn_steps
-        assert update_func == "mean" or update_func == "mgu"
         self.update_func = update_func
         if update_func == "mgu":
             self.W_f = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
@@ -25,11 +26,13 @@ class MPNN(torch_geometric.nn.MessagePassing):
             self.b_h = torch.nn.Parameter(torch.randn(hidden_size), requires_grad=True)
             self.sigma_g = torch.nn.Sigmoid()
             self.phi_h = torch.nn.Tanh()
+        self.pad = torch.nn.ZeroPad2d((0, hidden_size - input_size, 0, 0))
     
     # forward-pass behavior
     def forward(self, x, edge_index):
+        # pad x -> h
+        h = self.pad(x)
         # perform mpnn_steps of message propagation (messaging, aggregation, updating)
-        h = x
         for _ in range(self.mpnn_steps):
             h = self.propagate(edge_index, h=h)
         return h, edge_index
@@ -76,26 +79,23 @@ class Model(torch.nn.Module):
     """
 
     # constructor
-    def __init__(self, node_encoding_length, args):
+    def __init__(self, node_feature_length, args):
         # unpack args
-        hidden_encoding_length = args.node_encoding
+        input_encoding_length = args.input_encoding
+        hidden_encoding_length = args.hidden_encoding
         mpnn_steps = args.mpnn_steps
-        s2s_steps = args.s2s_steps
+        mpnn_aggr = args.mpnn_aggr
+        mpnn_update = args.mpnn_update
         # initialize base class
         super(Model, self).__init__()
-        # validate hyperparameters
-        assert hidden_encoding_length >= node_encoding_length
-        assert s2s_steps >= 2
         # ReLU for nonlinear activation
         self.relu = torch.nn.ReLU()
         # input layer transforms encoding to hidden encoding length 
-        self.input_layer = torch.nn.Linear(node_encoding_length, hidden_encoding_length)
+        self.input_layer = torch.nn.Linear(node_feature_length, input_encoding_length)
         # MPNN develops latent representation
-        self.mpnn_layers = MPNN(mpnn_steps, hidden_encoding_length, args.mpnn_aggr, args.mpnn_update)
-        # readout layer reduces node encoding matrix to fixed-length vector
-        self.readout_layer = torch_geometric.nn.Set2Set(hidden_encoding_length, s2s_steps)
+        self.mpnn_layers = MPNN(mpnn_steps, input_encoding_length, hidden_encoding_length, mpnn_aggr, mpnn_update)
         # prediction layer returns prediction from graph encoding vector
-        self.prediction_layer = torch.nn.Linear(2 * hidden_encoding_length, 1)
+        self.prediction_layer = torch.nn.Linear(hidden_encoding_length, 1)
     
     # forward-pass behavior
     def forward(self, x, edge_index, batch):
@@ -105,7 +105,7 @@ class Model(torch.nn.Module):
         x = self.relu(x)
         # do message passing
         x, _ = self.mpnn_layers(x, edge_index)
-        # do readout with Set2Set
-        x = self.readout_layer(x, batch)
+        # do readout to grpah-level encoding vector
+        x = [torch.mean(x[:,i]) for i in range(x.shape[1])]
         # make prediction
         return self.prediction_layer(x)

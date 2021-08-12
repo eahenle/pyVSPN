@@ -29,8 +29,12 @@ def check_paths(args):
 
 def cached(f, cache_file, args):
     # unpack args
-    cache_path = args.cache_path
-    recache = args.recache
+    if type(args) == type({}):
+        cache_path = args["cache_path"]
+        recache = args["recache"]
+    else:
+        cache_path = args.cache_path
+        recache = args.recache
     # determine full cache file path
     cache_file = f"{cache_path}/{cache_file}"
     if recache or not os.path.isfile(cache_file):

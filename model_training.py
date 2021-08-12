@@ -30,7 +30,7 @@ def train(model, training_data, validation_data, loss_func, args):
         updates = 0
         validation_loss_history = [numpy.inf, numpy.inf, numpy.inf]
         breakout = False
-        for epoch_num in tqdm(range(nb_epochs), desc="Training", mininterval=5):
+        for epoch_num in tqdm(range(nb_epochs), desc="Training Epochs"):
             training_loss = 0
             validation_loss = 0
             for batch in training_data: # loop over minibatches

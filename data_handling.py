@@ -53,7 +53,7 @@ def load_data(args, device):
     Reads a collection of files from disk to build the data collection for working with the MPNN
     """
     # unpack args
-    properties  = args.properties
+    properties  = args.target_data
     target      = args.target
     input_path  = args.input_path
     cache_path  = args.cache_path
@@ -65,7 +65,7 @@ def load_data(args, device):
 
     # load graph arrays and pickle data objects for each graph
     names = [name for name in df["name"]]
-    for i,name in enumerate(tqdm(df["name"], desc="Collecting graph data:", mininterval=2)):
+    for i,name in enumerate(tqdm(df["name"], desc="Collecting Graph Data", mininterval=2)):
         cached(lambda : load_graph_arrays(name, df[target][i], input_path), f"graphs/{name}.pkl", args)
 
     # generate train/validate/test splits
