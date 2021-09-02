@@ -9,33 +9,35 @@ from model_evaluation import evaluate
 
 
 def main():
-    # get command line args (or defaults) and print them
+    # get command line args (or defaults)
     args = parse_args()
+    # display the args
     print_args(args)
-    write_args(args)
 
     # check for required folders
     check_paths(args)
 
+    # write the args as text in the output folder
+    write_args(args)
+
     # select training device (CPU/GPU) and get handle for cpu
     device, cpu = choose_device(args)
 
-    # load data [and send to device]
-    training_data, validation_data, test_data, feature_length = load_data(args, device)
+    # load data as DataLoader objects
+    training_data, validation_data, test_data, feature_length = load_data(args)
 
     # instantiate the model [and send to device]
     model = Model(feature_length, args).to(device)
 
     # Define loss function
-    loss_func = torch.nn.MSELoss()
+    loss_func = torch.nn.L1Loss()
 
     # run the training loop
-    model.train() # set training mode
     train(model, training_data, validation_data, loss_func, args)
 
     # evaluate the model
-    model.eval() # set evaluation mode
     model.to(cpu)
+    model.eval()
     evaluate(model, test_data, loss_func, args)
 
     # save model

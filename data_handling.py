@@ -9,29 +9,6 @@ from tqdm import tqdm
 from helper_functions import cached
 
 
-class Dataset(torch_geometric.data.Dataset):
-    """
-    For loading mini-batches of data from disk. When iterated or sliced, returns a data lists corresponding to mini-batches,
-    by loading the corresponding pickle files from the cache.
-    """
-    def __init__(self, batches, cache_path):
-        self.batches = batches
-        self.graph_cache = f"{cache_path}/graphs"
-
-    # return number of batches
-    def __len__(self):
-        return len(self.batches)
-    
-    # return data list for given batch
-    def __getitem__(self, batch_index):
-        batch_names = self.batches[batch_index]
-        batch = []
-        for name in batch_names:
-            with open(f"{self.graph_cache}/{name}.pkl", "rb") as f:
-                batch.append(pickle.load(f))
-        return batch
-
-
 # load the serialized array representations of a graph, and collate into a Data object
 def load_graph_arrays(xtal_name, y, input_path):
     # read the arrays encoding the graph
@@ -44,23 +21,21 @@ def load_graph_arrays(xtal_name, y, input_path):
     edge_index = torch.tensor([edge_src, edge_dst], dtype=torch.long)
     y = torch.tensor([y], dtype=torch.float)
 
-    # pack tensors as data object [and send to GPU]
-    return torch_geometric.data.Data(x=x, edge_index=edge_index, y=y, batch=torch.tensor([0]), nb_nodes=x.shape[0], nb_edges=edge_index.shape[1])
+    # pack tensors into Data object
+    return torch_geometric.data.Data(x=x, edge_index=edge_index, y=y)
 
 
-def load_data(args, device):
+def load_data(args):
     """
     Reads a collection of files from disk to build the data collection for working with the MPNN
     """
     # unpack args
-    properties  = args.target_data
+    target_data = args.target_data
     target      = args.target
     input_path  = args.input_path
-    cache_path  = args.cache_path
 
     # read the list of examples
-    df = cached(lambda : pandas.read_csv(properties), "properties.pkl", args)
-    feature_length = numpy.load(f"{input_path}/encoding_length.npy")
+    df = cached(lambda : pandas.read_csv(target_data), "target_data.pkl", args)
 
     # load graph arrays and pickle data objects for each graph
     names = [name for name in df["name"]]
@@ -70,15 +45,18 @@ def load_data(args, device):
     # generate train/validate/test splits
     training_split, validation_split, test_split = cached(lambda : get_split_data(names, args), "data_split.pkl", args)
 
-    # generate mini-batch splits
-    training_data = cached(lambda : get_mini_batches(training_split, args), "minibatches.pkl", args)
-
-    # load validation and testing data lists
+    # load data lists
     validation_data = load_data_list(validation_split, args)
     test_data = load_data_list(test_split, args)
+    training_data = load_data_list(training_split, args)
 
-    # set up training dataset
-    training_data = Dataset(training_data, cache_path)
+    # determine encoding length
+    feature_length = training_data[0]["x"].shape[1]
+
+    # cast data lists to DataLoader objects
+    validation_data = torch_geometric.data.DataLoader(validation_data) ## TODO mini-batches
+    test_data = torch_geometric.data.DataLoader(test_data)
+    training_data = torch_geometric.data.DataLoader(training_data)
 
     return training_data, validation_data, test_data, feature_length
 
@@ -88,7 +66,7 @@ def get_split_data(names, args):
     assert len(names) > 0
     test_prop = args.test_prop
     val_prop = args.val_prop
-    assert test_prop + val_prop < 0.5
+    #assert test_prop + val_prop < 0.5 ## TODO reinstate
 
     # make shuffled list of data indices
     indices = [i for i,_ in enumerate(names)]
@@ -104,23 +82,6 @@ def get_split_data(names, args):
     training_data = [names[i] for i in indices[test_cut+val_cut:]]
 
     return training_data, validation_data, test_data
-
-
-# splits list of indices into batches for mini-batch gradient descent
-def get_mini_batches(data, args):
-    batch_size = args.batch_size
-
-    training_data = []
-    while len(data) > 0: # keep going until all data indices are used
-        batch = []
-        for _ in range(batch_size): # build a list of between 1 and batch_size indices
-            if len(data) > 0:
-                batch.append(data.pop())
-            else:
-                break
-        training_data.append(batch) # add batch to the list of batches
-
-    return training_data
 
 
 # loads a graph from the cache

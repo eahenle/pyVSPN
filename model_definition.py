@@ -12,20 +12,11 @@ class MPNN(torch_geometric.nn.MessagePassing):
     # constructor
     def __init__(self, mpnn_steps, input_size, hidden_size, msg_aggr, update_func):
         assert mpnn_steps > 0
-        assert hidden_size > input_size
-        assert update_func == "mean" or update_func == "mgu"
+        #assert hidden_size > input_size ## TODO ?
+        assert update_func == "mean" ## TODO add GRU update option
         super(MPNN, self).__init__(aggr=msg_aggr)
         self.mpnn_steps = mpnn_steps
         self.update_func = update_func
-        if update_func == "mgu":
-            self.W_f = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
-            self.U_f = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
-            self.b_f = torch.nn.Parameter(torch.randn(hidden_size), requires_grad=True)
-            self.W_h = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
-            self.U_h = torch.nn.Parameter(torch.randn(hidden_size, hidden_size), requires_grad=True)
-            self.b_h = torch.nn.Parameter(torch.randn(hidden_size), requires_grad=True)
-            self.sigma_g = torch.nn.Sigmoid()
-            self.phi_h = torch.nn.Tanh()
         self.pad = torch.nn.ZeroPad2d((0, hidden_size - input_size, 0, 0))
     
     # forward-pass behavior
@@ -44,22 +35,6 @@ class MPNN(torch_geometric.nn.MessagePassing):
     # update function: mean
     def update_mean(self, m, h):
         return (h + m) / 2
-
-    # update function: mgu
-    def update_mgu(self, m, h):
-        Wfm = torch.matmul(self.W_f, torch.transpose(m, 0, 1))
-        Ufh = torch.matmul(self.U_f, torch.transpose(h, 0, 1))
-        f_t = torch.transpose(Wfm + Ufh, 0, 1)
-        for i in range(f_t.shape[0]):
-            f_t[i,:] += self.b_f
-        f_t = self.sigma_g(f_t)
-        Whm = torch.matmul(self.W_h, torch.transpose(m, 0, 1))
-        Uhm = torch.matmul(self.U_h, torch.transpose(f_t * h, 0, 1))
-        h_hat_t = torch.transpose(Whm + Uhm, 0, 1)
-        for i in range(h_hat_t.shape[0]):
-            h_hat_t[i,:] += self.b_h
-        h_hat_t = self.phi_h(h_hat_t)
-        return (1 - f_t) * h + f_t * h_hat_t
 
     # update function switch
     def update(self, m, h):
@@ -98,14 +73,14 @@ class Model(torch.nn.Module):
         self.prediction_layer = torch.nn.Linear(hidden_encoding_length, 1)
     
     # forward-pass behavior
-    def forward(self, x, edge_index):
+    def forward(self, datum):
         # transform input
-        x = self.input_layer(x)
+        x = self.input_layer(datum.x)
         # ReLU activation
         x = self.relu(x)
         # do message passing
-        x, _ = self.mpnn_layers(x, edge_index)
-        # do readout to grpah-level encoding vector
-        x = torch.tensor([torch.mean(x[:,i]) for i in range(x.shape[1])])
+        x, _ = self.mpnn_layers(x, datum.edge_index)
+        # do readout to graph-level encoding vector
+        x = torch.mean(x, 0)
         # make prediction
         return self.prediction_layer(x)

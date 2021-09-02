@@ -6,7 +6,7 @@ def evaluate(model, test_data, loss_func, args):
     output_path = args.output_path
 
     # evaluate test loss
-    y_hat_test = [model(datum.x, datum.edge_index).item() for datum in test_data]
+    y_hat_test = [model(datum).item() for datum in test_data]
     y_test = [x.y.item() for x in test_data]
     test_loss = loss_func(torch.tensor(y_hat_test), torch.tensor(y_test))
     print(f"\nTest loss: {test_loss}\n")
@@ -18,8 +18,6 @@ def evaluate(model, test_data, loss_func, args):
     plt.ylabel("Predicted Value (mmol/g)")
     plt.title(f"Test Accuracy (MSE = {test_loss})")
     fig.colorbar(im[3])
-    plt.xlim([0, ax.get_xlim()[1]])
-    plt.ylim([0, ax.get_ylim()[1]])
     plt.savefig(f"{output_path}/test_accuracy.png")
 
     # generate training curve
@@ -30,8 +28,8 @@ def evaluate(model, test_data, loss_func, args):
     fig, ax = plt.subplots()
     plt.plot(update, validation_loss, label="Validation")
     plt.plot(update, training_loss, label="Training")
-    plt.xlim([0, ax.get_xlim()[1]])
-    plt.ylim([0, ax.get_ylim()[1]])
+    #plt.xlim([0, ax.get_xlim()[1]]) ## TODO reinstate
+    #plt.ylim([0, ax.get_ylim()[1]])
     plt.xlabel("Update")
     plt.ylabel("MSE")
     plt.title("Loss Curves")

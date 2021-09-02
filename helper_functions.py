@@ -55,7 +55,8 @@ def save_model(model, args):
 
 
 def save_checkpoint(model, args):
-    cached(lambda : model, "model_checkpoint.pkl", args)
+    with open(f"{args.cache_path}/checkpoint.pkl", "wb") as f:
+        pickle.dump(model, f)
 
 
 def print_args(args):

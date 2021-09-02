@@ -54,12 +54,6 @@ def parse_args():
     
     parser.add_argument("--mpnn_update", default="mean",
         help="Name of node update function for MPNN layers.")
-    
-    parser.add_argument("--nb_checkpoints", default=100,
-        help="Number of checkpoints at which to save during training (if all epochs run). Only most recent checkpoint is maintained.")
-    
-    parser.add_argument("--nb_reports", type=int, default=100,
-        help="Number of loss reports printed during training (if all epochs run).")
 
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
