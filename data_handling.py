@@ -33,6 +33,7 @@ def load_data(args):
     target_data = args.target_data
     target      = args.target
     input_path  = args.input_path
+    batch_size  = args.batch_size
 
     # read the list of examples
     df = cached(lambda : pandas.read_csv(target_data), "target_data.pkl", args)
@@ -53,10 +54,9 @@ def load_data(args):
     # determine encoding length
     feature_length = training_data[0]["x"].shape[1]
 
-    # cast data lists to DataLoader objects
-    validation_data = torch_geometric.data.DataLoader(validation_data) ## TODO mini-batches
-    test_data = torch_geometric.data.DataLoader(test_data)
-    training_data = torch_geometric.data.DataLoader(training_data)
+    # cast training/validation data lists to DataLoader objects
+    validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=batch_size)
+    training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size)
 
     return training_data, validation_data, test_data, feature_length
 

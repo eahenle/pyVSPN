@@ -35,7 +35,7 @@ def train(model, training_data, validation_data, loss_func, args):
             optimizer.zero_grad()
 
             # calculate loss
-            loss = loss_func(model(training_batch), training_batch.y)
+            loss = loss_func(model(training_batch), training_batch.y) ## TODO figure out this stupid "size mismatch" crap
             training_loss += loss.item() * training_batch.num_graphs
 
             # back-propagate and update weights

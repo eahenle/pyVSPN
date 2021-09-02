@@ -30,8 +30,8 @@ def evaluate(model, test_data, loss_func, args):
     plt.plot(update, training_loss, label="Training")
     #plt.xlim([0, ax.get_xlim()[1]]) ## TODO reinstate
     #plt.ylim([0, ax.get_ylim()[1]])
-    plt.xlabel("Update")
-    plt.ylabel("MSE")
+    plt.xlabel("Epoch")
+    plt.ylabel("L1 Loss")
     plt.title("Loss Curves")
     plt.legend()
     plt.savefig(f"{output_path}/training_curve.png")
