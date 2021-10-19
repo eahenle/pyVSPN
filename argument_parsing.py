@@ -1,6 +1,6 @@
 import argparse
 
-def parse_args(): ## TODO implement or delete args
+def parse_args():
     """
     args = parse_args()
 
@@ -25,20 +25,14 @@ def parse_args(): ## TODO implement or delete args
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
 
+    parser.add_argument("--element_embedding", type=int, default=10,
+        help="Length of nodes' input layer encoding vectors.")
+
     parser.add_argument("--hidden_encoding", type=int, default=100,
         help="Length of nodes' hidden encoding vectors.")
     
-    parser.add_argument("--input_encoding", type=int, default=10,
-        help="Length of nodes' input layer encoding vectors.")
-    
     parser.add_argument("--input_path", default="./input_data",
         help="Path to folder containing input files.")
-    
-    parser.add_argument("--l1_reg", type=float, default=0,
-        help="Lambda hyperparameter for L1 regularization.")
-
-    parser.add_argument("--l2_reg", type=float, default=0,
-        help="Lambda hyperparameter for L2 regularization.")
 
     parser.add_argument("--learning_rate", type=float, default=0.001,
         help="Learning rate for gradient descent optimization (Adam).")
@@ -46,35 +40,29 @@ def parse_args(): ## TODO implement or delete args
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
     
-    parser.add_argument("--mpnn_aggr", default="mean",
+    parser.add_argument("--mpnn_aggr", default="add",
         help="Aggregation function for MPNN messages.")
 
     parser.add_argument("--mpnn_steps", type=int, default=5,
         help="Number of MPNN message propagation steps.")
-    
-    parser.add_argument("--mpnn_update", default="mean",
-        help="Name of node update function for MPNN layers.")
 
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
 
-    parser.add_argument("--target_data", default="input_data/targets.csv",
-        help="File containing structure names and target values (CSV format).")
-
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
         help="Ignore and overwrite cache files.")
-    
-    parser.add_argument("--stalling_threshold", type=float, default=0.0001,
-        help="If 3 consecutive validation losses have percent standard deviation less than this value, training stops.")
 
-    parser.add_argument("--stop_threshold", type=float, default=0.1,
-        help="Validation loss threshold for early stopping.")
+    parser.add_argument("--target_data", default="input_data/targets.csv",
+        help="File containing structure names and target values (CSV format).")
 
     parser.add_argument("--test_prop", type=float, default=0.2,
         help="Proportion of data to use for testing. Ignored when loading test/train split from disk.")
     
     parser.add_argument("--val_prop", type=float, default=0.01,
         help="Proportion of data to use for validation. Ignored when loading test/train split from disk.")
+
+    parser.add_argument("--verbose", action=argparse.BooleanOptionalAction, default=False,
+        help="Toggle printing of detailed information to console.")
     
     # process and return arguments
     args = parser.parse_args()

@@ -10,6 +10,7 @@ def train(model, training_data, validation_data, loss_func, args):
     nb_epochs = args.max_epochs
     learning_rate = args.learning_rate
     output_path = args.output_path
+    verbose = args.verbose
 
     # variable to track lowest validation loss (for selecting best model)
     best_val_loss = numpy.Inf
@@ -17,9 +18,12 @@ def train(model, training_data, validation_data, loss_func, args):
     # Create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    # create learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9, verbose=verbose)
+
     # write training log column headers
     with open(f"{output_path}/training_curve.csv", "w") as f:
-        f.write(f"Update,Training_MSE,Validation_MSE\n")
+        f.write(f"Epoch,Training_MSE,Validation_MSE\n")
 
     # train for up to `nb_epochs` cycles
     for epoch_num in tqdm(range(nb_epochs), desc="Training"):
@@ -35,12 +39,18 @@ def train(model, training_data, validation_data, loss_func, args):
             optimizer.zero_grad()
 
             # calculate loss
-            loss = loss_func(model(training_batch), training_batch.y) ## TODO figure out this stupid "size mismatch" crap
+            ## TODO what is going on with this broadcast size warning??
+            if verbose and epoch_num == 0:
+                print("training_batch.x: ", training_batch.x.shape, "\ttraining_batch.y: ", training_batch.y.shape)
+            loss = loss_func(model(training_batch), training_batch.y)
             training_loss += loss.item() * training_batch.num_graphs
 
             # back-propagate and update weights
             loss.backward()
             optimizer.step()
+        
+        # update the learning rate scheduler
+        scheduler.step()
         
         # normalize the loss
         training_loss /= nb_training_graphs

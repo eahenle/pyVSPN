@@ -27,7 +27,7 @@ def main():
     args = {"cache_path": "cache", "recache": False}
     train, validate, test = cached(lambda : None, "data_split.pkl", args)
     
-    plt.hist(node_counts) ## TODO based on results, remove graphs > 500 nodes
+    plt.hist(node_counts)
     plt.title("Node Count Histogram")
     plt.xlabel("Node Count")
     plt.ylabel("Graphs")

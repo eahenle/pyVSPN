@@ -38,7 +38,7 @@ def cached(f, cache_file, args):
     # determine full cache file path
     cache_file = f"{cache_path}/{cache_file}"
     if recache or not os.path.isfile(cache_file):
-        # run f(farg) and cache result
+        # run f() and cache result
         output = f()
         with open(cache_file, "wb") as cf:
             pickle.dump(output, cf)

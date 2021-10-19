@@ -27,7 +27,7 @@ def load_graph_arrays(xtal_name, y, input_path):
 
 def load_data(args):
     """
-    Reads a collection of files from disk to build the data collection for working with the MPNN
+    Reads a collection of files from disk to build the data for working with the MPNN
     """
     # unpack args
     target_data = args.target_data
@@ -66,7 +66,7 @@ def get_split_data(names, args):
     assert len(names) > 0
     test_prop = args.test_prop
     val_prop = args.val_prop
-    #assert test_prop + val_prop < 0.5 ## TODO reinstate
+    assert test_prop + val_prop < 0.5
 
     # make shuffled list of data indices
     indices = [i for i,_ in enumerate(names)]

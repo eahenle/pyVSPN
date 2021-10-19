@@ -6,10 +6,10 @@ import pandas
 output_path = "output"
 
 # generate training curve
-training_curves = pandas.read_csv(f"{output_path}/training_curve.csv")
-update = training_curves["Update"]
-validation_loss = training_curves["Validation_MSE"]
-training_loss = training_curves["Training_MSE"]
+training_curves = pandas.read_csv(f"{output_path}/training_curve.csv", header=None)
+update = training_curves[0]
+validation_loss = training_curves[1]
+training_loss = training_curves[2]
 fig, ax = plt.subplots()
 plt.plot(update, validation_loss, label="Validation")
 plt.plot(update, training_loss, label="Training")

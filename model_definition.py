@@ -12,30 +12,39 @@ class Model(torch.nn.Module):
     # constructor
     def __init__(self, node_feature_length, args):
         # unpack args
-        input_encoding_length = args.input_encoding
+        element_embedding_length = args.element_embedding
         hidden_encoding_length = args.hidden_encoding
         mpnn_steps = args.mpnn_steps
         mpnn_aggr = args.mpnn_aggr
+
         # initialize base class
         super(Model, self).__init__()
+
         # ReLU for nonlinear activation
-        self.relu = torch.nn.ReLU()
+        self.activation = torch.nn.LeakyReLU()
+
         # input layer transforms encoding to hidden encoding length 
-        self.input_layer = torch.nn.Linear(node_feature_length, input_encoding_length)
+        self.input_layer = torch.nn.Linear(node_feature_length, element_embedding_length, bias=False)
+
         # MPNN develops latent representation
         self.mpnn = torch_geometric.nn.conv.GatedGraphConv(hidden_encoding_length, mpnn_steps, mpnn_aggr)
+
         # prediction layer returns prediction from graph encoding vector
         self.prediction_layer = torch.nn.Linear(hidden_encoding_length, 1)
     
     # forward-pass behavior
     def forward(self, datum):
-        # transform input
+        # embed input
         x = self.input_layer(datum.x)
-        # ReLU activation
-        x = self.relu(x)
+
         # do message passing
         x = self.mpnn(x, datum.edge_index)
+
+        # nonlinear activation
+        x = self.activation(x) # (element embedding)
+
         # do readout to graph-level encoding vector
         x = torch.mean(x, 0)
+        
         # make prediction
         return self.prediction_layer(x)
