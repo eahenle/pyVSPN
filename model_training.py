@@ -1,5 +1,6 @@
-import torch
 import numpy
+import pickle
+import torch
 from tqdm import tqdm
 
 from helper_functions import save_model
@@ -12,15 +13,20 @@ def train(model, training_data, validation_data, loss_func, args):
     output_path = args.output_path
     verbose = args.verbose
     lr_decay_gamma = args.lr_decay_gamma
+    rebound_threshold = args.rebound_threshold
 
     # variable to track lowest validation loss (for selecting best model)
     best_val_loss = numpy.Inf
+
+    # variables for validation loss rebound stopping
+    rebound_counter = 0
+    previous_loss = numpy.Inf
 
     # Create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # create learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=lr_decay_gamma, verbose=verbose and not args.lr_decay_gamma == 1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=lr_decay_gamma, verbose=verbose and args.lr_decay_gamma != 1)
 
     # write training log column headers
     with open(f"{output_path}/training_curve.csv", "w") as f:
@@ -30,6 +36,7 @@ def train(model, training_data, validation_data, loss_func, args):
     for epoch_num in tqdm(range(nb_epochs), desc="Training"):
         training_loss = 0
         nb_training_graphs = 0
+        
         # train model on each minibatch
         model.train()
         for training_batch in training_data:
@@ -72,3 +79,17 @@ def train(model, training_data, validation_data, loss_func, args):
         if validation_loss < best_val_loss:
             best_val_loss = validation_loss
             save_model(model, args)
+
+        # check for validation loss rebound
+        if validation_loss > previous_loss:
+            rebound_counter += 1
+            if rebound_counter > rebound_threshold:
+                break
+        else:
+            rebound_counter = 0
+        previous_loss = validation_loss
+
+    # re-load model w/ lowest validation loss
+    with open(f"{args.output_path}/trained_model.pkl", "rb") as f:
+        model = pickle.load( f)
+    return model

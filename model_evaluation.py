@@ -43,4 +43,3 @@ def evaluate(model, test_data, loss_func, args):
     plt.title(target)
     plt.legend()
     plt.savefig(f"{output_path}/training_curve.png")
-

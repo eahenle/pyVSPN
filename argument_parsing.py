@@ -52,6 +52,9 @@ def parse_args():
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
 
+    parser.add_argument("--rebound_threshold", type=int, default=10,
+        help="Maximum number of consecutive epochs with validation loss increase before early stopping.")
+
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
         help="Ignore and overwrite cache files.")
 

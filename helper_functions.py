@@ -1,6 +1,6 @@
-import torch
 import os
 import pickle
+import torch
 
 
 # select CPU or GPU as compute device
@@ -12,7 +12,7 @@ def choose_device(args):
         device = torch.device(device_name)
     else:
         raise Exception("CUDA not available")
-    return device, torch.device("cpu")
+    return device
 
 
 # check for required folders

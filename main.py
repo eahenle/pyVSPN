@@ -20,8 +20,8 @@ def main():
     # write the args as text in the output folder
     write_args(args)
 
-    # select training device (CPU/GPU) and get handle for cpu
-    device, cpu = choose_device(args)
+    # select training device (CPU/GPU)
+    device = choose_device(args)
 
     # load data as DataLoader objects
     training_data, validation_data, test_data, feature_length = load_data(args)
@@ -33,11 +33,9 @@ def main():
     loss_func = torch.nn.L1Loss()
 
     # run the training loop
-    train(model, training_data, validation_data, loss_func, args)
+    model = train(model, training_data, validation_data, loss_func, args)
 
     # evaluate the model
-    model.to(cpu)
-    model.eval()
     evaluate(model, test_data, loss_func, args)
 
     # save model
