@@ -36,6 +36,9 @@ def parse_args():
 
     parser.add_argument("--learning_rate", type=float, default=0.001,
         help="Learning rate for gradient descent optimization (Adam).")
+
+    parser.add_argument("--lr_decay_gamma", type=float, default=1.,
+        help="Gamma coefficient for learning rate decay.")
     
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")

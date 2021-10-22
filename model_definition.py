@@ -1,5 +1,6 @@
 import torch
 import torch_geometric
+import torch_scatter
 
 class Model(torch.nn.Module):
     """
@@ -20,8 +21,9 @@ class Model(torch.nn.Module):
         # initialize base class
         super(Model, self).__init__()
 
-        # ReLU for nonlinear activation
-        self.activation = torch.nn.LeakyReLU()
+        # nonlinear activations
+        self.relu = torch.nn.ReLU()
+        self.tanh = torch.nn.Tanh()
 
         # input layer transforms encoding to hidden encoding length 
         self.input_layer = torch.nn.Linear(node_feature_length, element_embedding_length, bias=False)
@@ -37,14 +39,18 @@ class Model(torch.nn.Module):
         # embed input
         x = self.input_layer(datum.x)
 
+        # nonlinear activation
+        x = self.tanh(x)
+
         # do message passing
         x = self.mpnn(x, datum.edge_index)
 
-        # nonlinear activation
-        x = self.activation(x) # (element embedding)
-
         # do readout to graph-level encoding vector
-        x = torch.mean(x, 0)
+        #x = torch_scatter.scatter_mean(x, datum.batch)
+        x = torch_geometric.nn.global_mean_pool(x, datum.batch)
+
+        # nonlinear activation
+        x = self.relu(x)
         
         # make prediction
-        return self.prediction_layer(x)
+        return self.prediction_layer(x).squeeze(1)

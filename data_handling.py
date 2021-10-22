@@ -55,8 +55,9 @@ def load_data(args):
     feature_length = training_data[0]["x"].shape[1]
 
     # cast training/validation data lists to DataLoader objects
-    validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=batch_size)
+    validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=len(validation_data))
     training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size)
+    test_data = torch_geometric.data.DataLoader(test_data, batch_size=len(test_data))
 
     return training_data, validation_data, test_data, feature_length
 
