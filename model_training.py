@@ -20,7 +20,7 @@ def train(model, training_data, validation_data, loss_func, args):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # create learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=lr_decay_gamma, verbose=verbose)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=lr_decay_gamma, verbose=verbose and not args.lr_decay_gamma == 1)
 
     # write training log column headers
     with open(f"{output_path}/training_curve.csv", "w") as f:
@@ -40,9 +40,6 @@ def train(model, training_data, validation_data, loss_func, args):
             optimizer.zero_grad()
 
             # calculate loss
-            ## TODO what is going on with this broadcast size warning??
-            if verbose and epoch_num == 0:
-                print("training_batch.x: ", training_batch.x.shape, "\ttraining_batch.y: ", training_batch.y.shape)
             loss = loss_func(model(training_batch), training_batch.y)
             training_loss += loss.item() * training_batch.num_graphs
 
@@ -69,7 +66,7 @@ def train(model, training_data, validation_data, loss_func, args):
 
         # add to training log
         with open(f"{output_path}/training_curve.csv", "a") as f:
-            f.write(f"{epoch_num},{training_loss},{validation_loss}\n")
+            f.write(f"{epoch_num+1},{training_loss},{validation_loss}\n")
 
         # preserve optimal model
         if validation_loss < best_val_loss:
