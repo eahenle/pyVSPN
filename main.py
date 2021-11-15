@@ -1,6 +1,6 @@
 import torch
 
-from model_definition import Model
+from model_definition import choose_model
 from model_training import train
 from data_handling import load_data
 from argument_parsing import parse_args
@@ -27,7 +27,7 @@ def main():
     training_data, validation_data, test_data, feature_length = load_data(args)
 
     # instantiate the model [and send to device]
-    model = Model(feature_length, args).to(device)
+    model = choose_model(feature_length, args).to(device)
 
     # Define loss function
     loss_func = torch.nn.L1Loss()
