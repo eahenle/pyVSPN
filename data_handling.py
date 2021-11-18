@@ -22,7 +22,7 @@ def load_graph_arrays(xtal_name, y, input_path):
     y = torch.tensor([y], dtype=torch.float)
 
     # pack tensors into Data object
-    return torch_geometric.data.Data(x=x, edge_index=edge_index, y=y)
+    return torch_geometric.data.Data(x=x, edge_index=edge_index, y=y) ## TODO add tracking of input name
 
 
 def load_data(args):
