@@ -18,9 +18,9 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
 
     # read the arrays encoding the graph
     if load_A:
-        atom_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_atom_edges_src.npy")
-        atom_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_atom_edges_dst.npy")
-        atom_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_atom_node_features.npy")
+        atom_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_edges_src.npy")
+        atom_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_edges_dst.npy")
+        atom_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_node_features.npy")
         # convert arrays to tensors
         atom_x = torch.tensor(atom_node_fts, dtype=torch.float)
         atom_edge_index = torch.tensor([atom_edge_src, atom_edge_dst], dtype=torch.long)
@@ -41,7 +41,7 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
 
     # pack tensors into Data object
     if load_A and not load_V and not load_AV:
-        data = torch_geometric.data.Data(atom_x=atom_x, atom_edge_index=atom_edge_index, y=y)
+        data = torch_geometric.data.Data(x=atom_x, edge_index=atom_edge_index, y=y)
     elif load_V and not load_A and not load_AV:
         data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y)
     elif load_A and load_V and not load_AV:
