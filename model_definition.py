@@ -89,7 +89,7 @@ class PoreGraphGNN(torch.nn.Module):
         self.tanh = torch.nn.Tanh()
         self.mpnn = torch_geometric.nn.conv.GatedGraphConv(voro_h, mpnn_steps, mpnn_aggr)
         self.relu = torch.nn.ReLU()
-        self.prediction_layer = torch.nn.Linear(voro_h)
+        self.prediction_layer = torch.nn.Linear(voro_h, 1)
 
     def forward(self, datum):
         # embed input

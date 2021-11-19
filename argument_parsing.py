@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument("--element_embedding", type=int, default=10,
         help="Length of nodes' input layer encoding vectors.")
 
-    parser.add_argument("--hidden_encoding", type=int, default=100,
+    parser.add_argument("--hidden_encoding", type=int, default=10,
         help="Length of nodes' hidden encoding vectors.")
     
     parser.add_argument("--input_path", default="./input_data",
@@ -42,6 +42,9 @@ def parse_args():
     
     parser.add_argument("--max_epochs", type=int, default=10000,
         help="Maximum number of training epochs.")
+
+    parser.add_argument("--model", default="BondingGraphGNN",
+        help="Which NN model to use.")
     
     parser.add_argument("--mpnn_aggr", default="add",
         help="Aggregation function for MPNN messages.")
@@ -69,6 +72,12 @@ def parse_args():
 
     parser.add_argument("--verbose", action=argparse.BooleanOptionalAction, default=False,
         help="Toggle printing of detailed information to console.")
+
+    parser.add_argument("--voro_embedding", type=int, default=3,
+        help="Length of Voro-node embedding after input layer.")
+
+    parser.add_argument("--voro_h", type=int, default=10,
+        help="Hidden representation length for Voro-nodes.")
     
     # process and return arguments
     args = parser.parse_args()
