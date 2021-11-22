@@ -150,6 +150,14 @@ class VSPN(torch.nn.Module):
     def forward(self, datum):
         if self.parallel: # parallel VSPN
             # embed inputs
+            atom_x = datum.x_b
+            atom_edge_index = datum.edge_index_b
+            batch_b = datum.x_b_batch
+            voro_x = datum.x_v
+            voro_edge_index =datum.edge_index_v
+            batch_v = datum.x_v_batch
+            print('ali was here')
+            exit()
             atom_x = self.atom_input(datum.atom_x)
             voro_x = self.voro_input(datum.voro_x)
             # nonlinear activation

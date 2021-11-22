@@ -11,7 +11,28 @@ from tqdm import tqdm
 from helper_functions import cached
 
 
-# load the serialized array representations of a graph, and collate into a Data object
+# For packing pair of graphs
+# ----------------------------------------------------------------------
+class PairData(Data):
+    '''
+    It can be used to store pair of graphs in single DATA object.
+    '''
+    def __init__(self, edge_index_b=None, x_b=None, edge_index_v=None, x_v=None, y= None):
+        super().__init__()
+        self.edge_index_b = edge_index_b
+        self.x_b = x_b
+        self.edge_index_v = edge_index_v
+        self.x_v = x_v
+        self.y = y
+    def __inc__(self, key, value, *args, **kwargs):
+        if key == 'edge_index_b':
+            return self.x_b.size(0)
+        if key == 'edge_index_v':
+            return self.x_v.size(0)
+        else:
+            return super().__inc__(key, value, *args, **kwargs)
+# ----------------------------------------------------------------------
+
 def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
     # load targets into tensor
     y = torch.tensor([y], dtype=torch.float)
@@ -45,7 +66,8 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
     elif load_V and not load_A and not load_AV:
         data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y)
     elif load_A and load_V and not load_AV:
-        data = torch_geometric.data.Data(atom_x=atom_x, voro_x=voro_x, atom_edge_index=atom_edge_index, voro_edge_index=voro_edge_index, y=y)
+        data = PairData(edge_index_b=atom_edge_index, x_b=atom_x, edge_index_v=voro_edge_index, x_v=voro_x)
+        # data = torch_geometric.data.Data(atom_x=atom_x, voro_x=voro_x, atom_edge_index=atom_edge_index, voro_edge_index=voro_edge_index, y=y)
     elif load_AV and not load_A and not load_V:
         data = torch_geometric.data.Data(av_x=av_x, av_edge_index=av_edge_index, y=y)
     else:
@@ -99,9 +121,14 @@ def load_data(args):
     feature_length = training_data[0]["x"].shape[1]
 
     # cast training/validation data lists to DataLoader objects
-    validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=len(validation_data))
-    training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size)
-    test_data = torch_geometric.data.DataLoader(test_data, batch_size=len(test_data))
+    if load_A and load_V and not load_AV:
+        training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size, follow_batch=['x_b', 'x_v'], shuffle = True)
+        validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=len(validation_data), follow_batch=['x_b', 'x_v'])
+        test_data = torch_geometric.data.DataLoader(test_data, batch_size=len(test_data), follow_batch=['x_b', 'x_v'])
+    else:
+        validation_data = torch_geometric.data.DataLoader(validation_data, batch_size=len(validation_data))
+        training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size, shuffle = True)
+        test_data = torch_geometric.data.DataLoader(test_data, batch_size=len(test_data))
 
     return training_data, validation_data, test_data, feature_length
 
