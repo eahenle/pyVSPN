@@ -3,7 +3,7 @@ import torch
 import torch_geometric
 
 
-def choose_model(feature_length, args):
+def choose_model(atom_feature_length, voro_feature_length, args):
     """
     model = choose_model(feature_length, args)
 
@@ -13,13 +13,13 @@ def choose_model(feature_length, args):
     model = args.model
 
     if model == "BondingGraphGNN":
-        return BondingGraphGNN(feature_length, args)
+        return BondingGraphGNN(atom_feature_length, args)
 
     if model == "PoreGraphGNN":
-        return PoreGraphGNN(feature_length, args)
+        return PoreGraphGNN(voro_feature_length, args)
 
     if model == "ParallelVSPN":
-        return VSPN(feature_length, True, args)
+        return VSPN(atom_feature_length, voro_feature_length, True, args)
 
     if model == "JointVSPN":
         return VSPN(feature_length, False, args)
@@ -116,19 +116,19 @@ class VSPN(torch.nn.Module):
     If `parallel == False`, a single MPNN processes the combined bonding and pore input graph.
     """
 
-    def __init__(self, node_feature_length, parallel, args):
+    def __init__(self, atom_feature_length, voro_feature_length, parallel, args):
         atom_embedding_length = args.element_embedding
-        voro_embedding_length = args.vertex_embedding
+        voro_embedding_length = args.voro_embedding
         voro_h = args.voro_h
-        atom_h = args.atom_h
-        atom_mpnn_steps = args.atom_mpnn_steps
-        voro_mpnn_steps = args.voro_mpnn_steps
-        atom_mpnn_aggr = args.atom_mpnn_aggr
-        voro_mpnn_aggr = args.voro_mpnn_aggr
-        av_embedding_length = args.av_embedding_length
-        av_h = args.av_h
-        av_mpnn_steps = args.av_mpnn_steps
-        av_mpnn_aggr = args.av_mpnn_aggr
+        atom_h = args.hidden_encoding
+        atom_mpnn_steps = args.mpnn_steps
+        voro_mpnn_steps = args.mpnn_steps
+        atom_mpnn_aggr = args.mpnn_aggr
+        voro_mpnn_aggr = args.mpnn_aggr
+        #av_embedding_length = args.av_embedding_length
+        #av_h = args.av_h
+        #av_mpnn_steps = args.av_mpnn_steps
+        #av_mpnn_aggr = args.av_mpnn_aggr
 
         super(VSPN, self).__init__()
 
@@ -137,8 +137,8 @@ class VSPN(torch.nn.Module):
         self.relu = torch.nn.ReLU()
 
         if parallel:
-            self.atom_input = torch.nn.Linear(node_feature_length, atom_embedding_length, bias=False)
-            self.voro_input = torch.nn.Linear(node_feature_length, voro_embedding_length, bias=False)
+            self.atom_input = torch.nn.Linear(atom_feature_length, atom_embedding_length, bias=False)
+            self.voro_input = torch.nn.Linear(voro_feature_length, voro_embedding_length, bias=False)
             self.atom_mpnn = torch_geometric.nn.conv.GatedGraphConv(atom_h, atom_mpnn_steps, atom_mpnn_aggr)
             self.voro_mpnn = torch_geometric.nn.conv.GatedGraphConv(voro_h, voro_mpnn_steps, voro_mpnn_aggr)
             self.prediction_layer = torch.nn.Linear(voro_h + atom_h, 1)
@@ -150,22 +150,31 @@ class VSPN(torch.nn.Module):
     def forward(self, datum):
         if self.parallel: # parallel VSPN
             # embed inputs
-            atom_x = self.atom_input(datum.atom_x)
-            voro_x = self.voro_input(datum.voro_x)
+            atom_x = datum.x_b
+            atom_edge_index = datum.edge_index_b
+            name_b = datum.name_b
+            batch_b = datum.x_b_batch
+            voro_x = datum.x_v
+            voro_edge_index =datum.edge_index_v
+            name_v = datum.name_v
+            batch_v = datum.x_v_batch
+            atom_x = self.atom_input(atom_x)
+            voro_x = self.voro_input(voro_x)
             # nonlinear activation
             atom_x = self.tanh(atom_x)
             voro_x = self.tanh(voro_x)
             # do message passing
-            atom_x = self.atom_mpnn(atom_x, datum.atom_edge_index)
-            voro_x = self.voro_mpnn(voro_x, datum.voro_edge_index)
+            atom_x = self.atom_mpnn(atom_x, atom_edge_index)
+            voro_x = self.voro_mpnn(voro_x, voro_edge_index)
             # do readout to graph-level encoding vector
-            atom_x = torch_geometric.nn.global_mean_pool(atom_x, datum.batch)
-            voro_x = torch_geometric.nn.global_mean_pool(voro_x, datum.batch) ## TODO consider if mean is best...
+            atom_x = torch_geometric.nn.global_mean_pool(atom_x, batch_b)
+            voro_x = torch_geometric.nn.global_mean_pool(voro_x, batch_v) ## TODO consider if mean is best...
             # nonlinear activation
             atom_x = self.relu(atom_x)
             voro_x = self.relu(voro_x)
+            
             # make prediction
-            return self.prediction_layer(concatenate(atom_x, voro_x)).squeeze(1)
+            return self.prediction_layer(torch.cat((atom_x, voro_x), dim=1)).squeeze(1)
         
         else: # connected VSPN
             x = self.av_input(datum.av_x)
