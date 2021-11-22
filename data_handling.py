@@ -50,16 +50,16 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
         atom_edge_index = torch.tensor([atom_edge_src, atom_edge_dst], dtype=torch.long)
 
     if load_V:
-        voro_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_voro_edges_src.npy")
-        voro_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_voro_edges_dst.npy")
-        voro_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_voro_node_features.npy")
+        voro_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_edges_src.npy")
+        voro_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_edges_dst.npy")
+        voro_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_features.npy")
         voro_x = torch.tensor(voro_node_fts, dtype=torch.float)
         voro_edge_index = torch.tensor([voro_edge_src, voro_edge_dst], dtype=torch.long)
 
     if load_AV:
         av_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_av_edges_src.npy")
         av_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_av_edges_dst.npy")
-        av_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_av_node_features.npy")
+        av_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_av_features.npy")
         av_x = torch.tensor(av_node_fts, dtype=torch.float)
         av_edge_index = torch.tensor([av_edge_src, av_edge_dst], dtype=torch.long)
 
@@ -120,7 +120,8 @@ def load_data(args):
     training_data = load_data_list(training_split, args)
 
     # determine encoding length
-    feature_length = training_data[0]["x"].shape[1]
+    atom_feature_length = training_data[0]["x_b"].shape[1]
+    voro_feature_length = training_data[0]["x_v"].shape[1]
 
     # cast training/validation data lists to DataLoader objects
     if load_A and load_V and not load_AV:
@@ -132,7 +133,7 @@ def load_data(args):
         training_data = torch_geometric.data.DataLoader(training_data, batch_size=batch_size, shuffle = True)
         test_data = torch_geometric.data.DataLoader(test_data, batch_size=len(test_data))
 
-    return training_data, validation_data, test_data, feature_length
+    return training_data, validation_data, test_data, atom_feature_length, voro_feature_length
 
 
 # splits data into training, validation, and test sets (shuffled name lists)

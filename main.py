@@ -24,10 +24,10 @@ def main():
     device = choose_device(args)
 
     # load data as DataLoader objects
-    training_data, validation_data, test_data, feature_length = load_data(args)
+    training_data, validation_data, test_data, atom_feature_length, voro_feature_length = load_data(args)
 
     # instantiate the model [and send to device]
-    model = choose_model(feature_length, args).to(device)
+    model = choose_model(atom_feature_length, voro_feature_length, args).to(device)
 
     # Define loss function
     loss_func = torch.nn.L1Loss()
