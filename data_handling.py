@@ -18,12 +18,14 @@ class PairData(Data):
     '''
     It can be used to store pair of graphs in single DATA object.
     '''
-    def __init__(self, edge_index_b=None, x_b=None, edge_index_v=None, x_v=None, y= None):
+    def __init__(self, edge_index_b=None, x_b=None, name_b = None, edge_index_v=None, x_v=None, name_v = None, y= None):
         super().__init__()
         self.edge_index_b = edge_index_b
         self.x_b = x_b
+        self.name_b = name_b
         self.edge_index_v = edge_index_v
         self.x_v = x_v
+        self.name_v = name_v
         self.y = y
     def __inc__(self, key, value, *args, **kwargs):
         if key == 'edge_index_b':
@@ -63,14 +65,13 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
 
     # pack tensors into Data object
     if load_A and not load_V and not load_AV:
-        data = torch_geometric.data.Data(x=atom_x, edge_index=atom_edge_index, y=y)
+        data = torch_geometric.data.Data(x=atom_x, edge_index=atom_edge_index, y=y, name=xtal_name)
     elif load_V and not load_A and not load_AV:
-        data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y)
+        data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y, xtal_name=xtal_name)
     elif load_A and load_V and not load_AV:
-        data = PairData(edge_index_b=atom_edge_index, x_b=atom_x, edge_index_v=voro_edge_index, x_v=voro_x)
-        # data = torch_geometric.data.Data(atom_x=atom_x, voro_x=voro_x, atom_edge_index=atom_edge_index, voro_edge_index=voro_edge_index, y=y)
+        data = PairData(edge_index_b=atom_edge_index, x_b=atom_x, name_b = xtal_name, edge_index_v=voro_edge_index, x_v=voro_x, name_v=xtal_name, y=y)
     elif load_AV and not load_A and not load_V:
-        data = torch_geometric.data.Data(av_x=av_x, av_edge_index=av_edge_index, y=y)
+        data = torch_geometric.data.Data(av_x=av_x, av_edge_index=av_edge_index, y=y, name=xtal_name)
     else:
         assert(False, "Invalid model loading directives.")
 

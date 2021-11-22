@@ -152,23 +152,23 @@ class VSPN(torch.nn.Module):
             # embed inputs
             atom_x = datum.x_b
             atom_edge_index = datum.edge_index_b
+            name_b = datum.name_b
             batch_b = datum.x_b_batch
             voro_x = datum.x_v
             voro_edge_index =datum.edge_index_v
+            name_v = datum.name_v
             batch_v = datum.x_v_batch
-            print('ali was here')
-            exit()
-            atom_x = self.atom_input(datum.atom_x)
-            voro_x = self.voro_input(datum.voro_x)
+            atom_x = self.atom_input(atom_x)
+            voro_x = self.voro_input(voro_x)
             # nonlinear activation
             atom_x = self.tanh(atom_x)
             voro_x = self.tanh(voro_x)
             # do message passing
-            atom_x = self.atom_mpnn(atom_x, datum.atom_edge_index)
-            voro_x = self.voro_mpnn(voro_x, datum.voro_edge_index)
+            atom_x = self.atom_mpnn(atom_x, atom_edge_index)
+            voro_x = self.voro_mpnn(voro_x, voro_edge_index)
             # do readout to graph-level encoding vector
-            atom_x = torch_geometric.nn.global_mean_pool(atom_x, datum.batch)
-            voro_x = torch_geometric.nn.global_mean_pool(voro_x, datum.batch) ## TODO consider if mean is best...
+            atom_x = torch_geometric.nn.global_mean_pool(atom_x, batch_b)
+            voro_x = torch_geometric.nn.global_mean_pool(voro_x, batch_v) ## TODO consider if mean is best...
             # nonlinear activation
             atom_x = self.relu(atom_x)
             voro_x = self.relu(voro_x)
