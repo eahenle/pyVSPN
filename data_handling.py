@@ -67,7 +67,7 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
     if load_A and not load_V and not load_AV:
         data = torch_geometric.data.Data(x=atom_x, edge_index=atom_edge_index, y=y, name=xtal_name)
     elif load_V and not load_A and not load_AV:
-        data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y, xtal_name=xtal_name)
+        data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y, name=xtal_name)
     elif load_A and load_V and not load_AV:
         data = PairData(edge_index_b=atom_edge_index, x_b=atom_x, name_b = xtal_name, edge_index_v=voro_edge_index, x_v=voro_x, name_v=xtal_name, y=y)
     elif load_AV and not load_A and not load_V:
