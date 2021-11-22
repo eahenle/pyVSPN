@@ -7,6 +7,7 @@ import pandas
 import random
 import pickle
 from tqdm import tqdm
+from torch_geometric.data import Data
 
 from helper_functions import cached
 
