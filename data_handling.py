@@ -78,7 +78,7 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
     return data
 
 
-def load_data(args):
+def load_data(device, args):
     """
     Reads a collection of files from disk to build the data for working with the MPNN
     """
@@ -115,9 +115,9 @@ def load_data(args):
     training_split, validation_split, test_split = cached(lambda : get_split_data(names, args), "data_split.pkl", args)
 
     # load data lists
-    validation_data = load_data_list(validation_split, args)
-    test_data = load_data_list(test_split, args)
-    training_data = load_data_list(training_split, args)
+    validation_data = load_data_list(validation_split, device, args)
+    test_data = load_data_list(test_split, torch.device("cpu"), args)
+    training_data = load_data_list(training_split, device, args)
 
     # determine encoding length
     atom_feature_length = training_data[0]["x_b"].shape[1]
@@ -167,7 +167,7 @@ def load_graph(name, cache_path):
 
 
 # generates a data list
-def load_data_list(names, args):
+def load_data_list(names, device, args):
     assert len(names) > 0
     cache_path = args.cache_path
-    return [load_graph(name, cache_path) for name in names]
+    return [load_graph(name, cache_path).to(device) for name in names]

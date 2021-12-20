@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy
 import pandas
+import torch
 
 def evaluate(model, test_data, loss_func, args):
     output_path = args.output_path
     target = args.target
+
+    # ensure model is in CPU memory (test_data should be, too)
+    model.to(torch.device("cpu"))
 
     # evaluate test loss
     y_hat_test = [model(datum) for datum in test_data][0]

@@ -24,7 +24,7 @@ def main():
     device = choose_device(args)
 
     # load data as DataLoader objects
-    training_data, validation_data, test_data, atom_feature_length, voro_feature_length = load_data(args)
+    training_data, validation_data, test_data, atom_feature_length, voro_feature_length = load_data(device, args)
 
     # instantiate the model [and send to device]
     model = choose_model(atom_feature_length, voro_feature_length, args).to(device)

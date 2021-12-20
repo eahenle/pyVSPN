@@ -1,4 +1,3 @@
-from numpy import concatenate
 import torch
 import torch_geometric
 
