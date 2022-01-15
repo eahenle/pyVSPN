@@ -24,98 +24,150 @@ def choose_model(atom_feature_length, voro_feature_length, args):
         return VSPN(feature_length, False, args)
 
 
+class EmbeddingBlock(torch.nn.Module):
+    '''
+    A class to generate element embedding of nodes from one-hot encoding
+
+    ...
+    author: ali
+    '''
+
+    def __init__(self, feature_length, embedding_length, bias_flag=False):
+        super().__init__()
+        self.lin = torch.nn.Linear(feature_length, embedding_length, bias=bias_flag)
+        self.relu = torch.nn.ReLU()
+
+    def forward(self, x):
+        return self.relu(self.lin(x))
+
+
+class MPNNBlock(torch.nn.Module):
+    '''
+
+    A class containing mpnn and readout to generate graph level embedding.
+    To be used after embedding block
+
+    ...
+    author: ali
+    '''
+
+    def __init__(self, hidden_size, mpnn_steps, mpnn_aggr):
+        super().__init__()
+        self.mpnn = torch_geometric.nn.conv.GatedGraphConv(hidden_size, mpnn_steps, mpnn_aggr)
+        self.relu = torch.nn.ReLU()
+
+    def forward(self, x, edge_index, batch):
+        x = self.mpnn(x, edge_index)
+        x = self.relu(x)
+        x = torch_geometric.nn.global_mean_pool(x, batch) #todo: add functionality to change readout through argument
+        return x
+
+
+class OutputBlock(torch.nn.Module):
+    '''
+    A class containing a shallow network to generate final predictions
+    To be used after mpnn block
+
+    ...
+    author: ali
+    '''
+
+    def __init__(self, hidden_size, bias_flag=True):
+        super().__init__()
+        self.lin1 = torch.nn.Linear(hidden_size, hidden_size, bias=bias_flag)
+        self.relu = torch.nn.ReLU()
+        self.lin2 = torch.nn.Linear(hidden_size, 1, bias=bias_flag)
+        self.softplus = torch.nn.Softplus()
+
+    def forward(self, x):
+        return self.softplus(self.lin2(self.relu(self.lin1(x))))
+
+
 class BondingGraphGNN(torch.nn.Module):
     """
-    model = BondingGraphGNN(node_encoding_length, args)
+    Model to process bonding graphs.
 
-    Creates a model for graph-level property prediction using MPNN on the bonding graph
+    ...
+    author = ali
     """
 
     # constructor
     def __init__(self, node_feature_length, args):
+        super().__init__()
         # unpack args
         element_embedding_length = args.element_embedding
         atom_h = args.hidden_encoding
         mpnn_steps = args.mpnn_steps
         mpnn_aggr = args.mpnn_aggr
 
-        # initialize base class
-        super(BondingGraphGNN, self).__init__()
 
-        # nonlinear activations
-        self.relu = torch.nn.ReLU()
-        self.tanh = torch.nn.Tanh()
-        # input layer transforms encoding to hidden encoding length 
-        self.atom_input = torch.nn.Linear(node_feature_length, element_embedding_length, bias=False)
-        # MPNN develops latent representation
-        self.atom_mpnn = torch_geometric.nn.conv.GatedGraphConv(atom_h, mpnn_steps, mpnn_aggr)
+        # embedding block to transforms one-hot encoding
+        self.emb_layer = EmbeddingBlock(feature_length = node_feature_length, embedding_length = element_embedding_length, bias_flag=False)
+        # message passing and readout
+        self.mpnn_layer = MPNNBlock(hidden_size = atom_h, mpnn_steps = mpnn_steps, mpnn_aggr = mpnn_aggr)
         # prediction layer returns prediction from graph encoding vector
-        self.prediction_layer = torch.nn.Linear(atom_h, 1)
-    
+        self.output_layer = OutputBlock(hidden_size = atom_h, bias_flag=True)
+
     # forward-pass behavior
     def forward(self, datum):
-        # embed input
-        x = self.atom_input(datum.x)
-        # nonlinear activation
-        x = self.tanh(x)
-        # do message passing
-        x = self.atom_mpnn(x, datum.edge_index)
-        # do readout to graph-level encoding vector
-        #x = torch_scatter.scatter_mean(x, datum.batch)
-        x = torch_geometric.nn.global_mean_pool(x, datum.batch)
-        # nonlinear activation
-        x = self.relu(x)
-        # make prediction
-        return self.prediction_layer(x).squeeze(1)
+        # input embedding
+        x = self.emb_layer(datum.x)
+        # do message passing and readout
+        x = self.mpnn_layer(x, datum.edge_index,datum.batch)
+        # output block to make predictions
+        x = self.output_layer(x)
+
+        return x.squeeze(1)
+
 
 
 class PoreGraphGNN(torch.nn.Module):
     """
-    model = PoreGraphGNN(feature_length, args)
+    Model to process vornoi graphs.
 
-    An MPNN for making graph-level predictions on only the pore space network
+    ...
+    author = ali
     """
-    
+
     def __init__(self, node_feature_length, args):
+        super().__init__()
+        #unpack args
         voro_h = args.voro_h
         vertex_embedding_length = args.voro_embedding
         mpnn_steps = args.mpnn_steps
         mpnn_aggr = args.mpnn_aggr
 
-        super(PoreGraphGNN, self).__init__()
 
-        self.voro_input = torch.nn.Linear(node_feature_length, vertex_embedding_length, bias=False)
-        self.tanh = torch.nn.Tanh()
-        self.mpnn = torch_geometric.nn.conv.GatedGraphConv(voro_h, mpnn_steps, mpnn_aggr)
-        self.relu = torch.nn.ReLU()
-        self.prediction_layer = torch.nn.Linear(voro_h, 1)
+        # embedding block to transforms one-hot encoding
+        self.emb_layer = EmbeddingBlock(feature_length = node_feature_length, embedding_length = vertex_embedding_length, bias_flag=False)
+        # # message passing and readout
+        self.mpnn_layer = MPNNBlock(hidden_size = voro_h, mpnn_steps = mpnn_steps, mpnn_aggr = mpnn_aggr)
+        # prediction layer returns prediction from graph encoding vector
+        self.output_layer = OutputBlock(hidden_size = voro_h, bias_flag=True)
 
     def forward(self, datum):
-        # embed input
-        x = self.voro_input(datum.voro_x)
-        # nonlinear activation
-        x = self.tanh(x)
-        # do message passing
-        x = self.mpnn(x, datum.edge_index)
-        # do readout to graph-level encoding vector
-        #x = torch_scatter.scatter_mean(x, datum.batch)
-        x = torch_geometric.nn.global_mean_pool(x, datum.batch)
-        # nonlinear activation
-        x = self.relu(x)
-        # make prediction
-        return self.prediction_layer(x).squeeze(1)
+        # input embedding
+        x = self.emb_layer(datum.x)
+        # do message passing and readout
+        x = self.mpnn_layer(x, datum.edge_index,datum.batch)
+        # output block to make predictions
+        x = self.output_layer(x)
+
+        return x.squeeze(1)
+
 
 
 class VSPN(torch.nn.Module):
     """
-    model = VSPN(feature_length, parallel, args)
+    Model to process both bonded and vornoi graphs
 
-    An MPNN for graph-level predictions using bond and pore graphs.
-    If `parallel == True`, independent MPNNs process the two graphs and concatenate their graph-level readouts.
-    If `parallel == False`, a single MPNN processes the combined bonding and pore input graph.
+    ...
+    author = ali
     """
 
     def __init__(self, atom_feature_length, voro_feature_length, parallel, args):
+        super().__init__()
+        #unpack args
         atom_embedding_length = args.element_embedding
         voro_embedding_length = args.voro_embedding
         voro_h = args.voro_h
@@ -124,61 +176,43 @@ class VSPN(torch.nn.Module):
         voro_mpnn_steps = args.mpnn_steps
         atom_mpnn_aggr = args.mpnn_aggr
         voro_mpnn_aggr = args.mpnn_aggr
-        #av_embedding_length = args.av_embedding_length
-        #av_h = args.av_h
-        #av_mpnn_steps = args.av_mpnn_steps
-        #av_mpnn_aggr = args.av_mpnn_aggr
 
-        super(VSPN, self).__init__()
-
-        self.parallel = parallel
-        self.tanh = torch.nn.Tanh()
-        self.relu = torch.nn.ReLU()
+        self.parallel = parallel #todo: use a different class for JointVSPN
 
         if parallel:
-            self.atom_input = torch.nn.Linear(atom_feature_length, atom_embedding_length, bias=False)
-            self.voro_input = torch.nn.Linear(voro_feature_length, voro_embedding_length, bias=False)
-            self.atom_mpnn = torch_geometric.nn.conv.GatedGraphConv(atom_h, atom_mpnn_steps, atom_mpnn_aggr)
-            self.voro_mpnn = torch_geometric.nn.conv.GatedGraphConv(voro_h, voro_mpnn_steps, voro_mpnn_aggr)
-            self.prediction_layer = torch.nn.Linear(voro_h + atom_h, 1)
+            # embedding, mpnn, and readout for bonded graphs
+            self.emb_layer_bond = EmbeddingBlock(feature_length = atom_feature_length, embedding_length = atom_embedding_length, bias_flag=False)
+            self.mpnn_layer_bond = MPNNBlock(hidden_size = atom_h, mpnn_steps = atom_mpnn_steps, mpnn_aggr = atom_mpnn_aggr)
+            # embedding, mpnn, and readout for vornoi graphs
+            self.emb_layer_vor = EmbeddingBlock(feature_length = voro_feature_length, embedding_length = voro_embedding_length, bias_flag=False)
+            self.mpnn_layer_vor = MPNNBlock(hidden_size = voro_h, mpnn_steps = voro_mpnn_steps, mpnn_aggr = voro_mpnn_aggr)
+
+            # output layer to process concatenated embeddings of bonded and vornoi graphs
+            self.output_layer = OutputBlock(hidden_size = voro_h + atom_h, bias_flag=True)
         else:
-            self.av_input = torch.nn.Linear(node_feature_length, av_embedding_length, bias=False)
-            self.av_mpnn = torch_geometric.nn.conv.GatedGraphConv(av_h, av_mpnn_steps, av_mpnn_aggr)
-            self.prediction_layer = torch.nn.Linear(av_h, 1)
-    
+            pass
+
     def forward(self, datum):
-        if self.parallel: # parallel VSPN
-            # embed inputs
+        if self.parallel:  # parallel VSPN
+            # unpacking args
             atom_x = datum.x_b
             atom_edge_index = datum.edge_index_b
             name_b = datum.name_b
             batch_b = datum.x_b_batch
             voro_x = datum.x_v
-            voro_edge_index =datum.edge_index_v
+            voro_edge_index = datum.edge_index_v
             name_v = datum.name_v
             batch_v = datum.x_v_batch
-            atom_x = self.atom_input(atom_x)
-            voro_x = self.voro_input(voro_x)
-            # nonlinear activation
-            atom_x = self.tanh(atom_x)
-            voro_x = self.tanh(voro_x)
-            # do message passing
-            atom_x = self.atom_mpnn(atom_x, atom_edge_index)
-            voro_x = self.voro_mpnn(voro_x, voro_edge_index)
-            # do readout to graph-level encoding vector
-            atom_x = torch_geometric.nn.global_mean_pool(atom_x, batch_b)
-            voro_x = torch_geometric.nn.global_mean_pool(voro_x, batch_v) ## TODO consider if mean is best...
-            # nonlinear activation
-            atom_x = self.relu(atom_x)
-            voro_x = self.relu(voro_x)
-            
-            # make prediction
-            return self.prediction_layer(torch.cat((atom_x, voro_x), dim=1)).squeeze(1)
-        
-        else: # connected VSPN
-            x = self.av_input(datum.av_x)
-            x = self.tanh(x)
-            x = self.av_mpnn(x)
-            x = torch_geometric.nn.global_mean_pool(x, datum.batch) ## TODO consider if mean is best...
-            x = self.relu(x)
-            return self.prediction_layer(x).squeeze(1)
+
+            # embedding
+            atom_x = self.emb_layer_bond(atom_x)
+            voro_x = self.emb_layer_vor(voro_x)
+            # mpnn and readout
+            atom_x = self.mpnn_layer_bond(atom_x, atom_edge_index, batch_b)
+            voro_x = self.mpnn_layer_bond(voro_x, voro_edge_index, batch_v)
+
+            # make predictions
+            return self.output_layer(torch.cat((atom_x, voro_x), dim=1)).squeeze(1)
+
+        else:  # connected VSPN
+            pass
