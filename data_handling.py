@@ -36,7 +36,7 @@ class PairData(Data):
             return super().__inc__(key, value, *args, **kwargs)
 # ----------------------------------------------------------------------
 
-def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
+def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV, args):
     # load targets into tensor
     y = torch.tensor([y], dtype=torch.float)
 
@@ -52,7 +52,21 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV):
     if load_V:
         voro_edge_src = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_edges_src.npy")
         voro_edge_dst = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_edges_dst.npy")
-        voro_node_fts = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_features.npy")
+        # load the radii of the voronoi spheres
+        voro_node_rad = numpy.load(f"{input_path}/graphs/{xtal_name}_vspn_features.npy")
+        # encode voro_node_rad
+        def _gaussian(radii, N):
+            n = len(radii)
+            r_min, r_max = radii.min(), radii.max()
+            rs = numpy.linspace(r_min, r_max, N)
+            gamma = (r_max - r_min) / N
+            X = numpy.zeros((n, N))
+            for i in numpy.arange(n):
+#
+                X[i, :] = [numpy.exp(-abs(r - radii[i]) / gamma) for r in rs]
+            return X
+        voro_node_fts = _gaussian(voro_node_rad, args.voro_embedding) ## TODO un-hardcode this (allow other encoding functions as arg)
+        # convert arrays to tensors
         voro_x = torch.tensor(voro_node_fts, dtype=torch.float)
         voro_edge_index = torch.tensor([voro_edge_src, voro_edge_dst], dtype=torch.long)
 
