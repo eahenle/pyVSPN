@@ -14,4 +14,5 @@ python3 main.py                             \
     --lr_decay_gamma    1                   \
     --model             "ParallelVSPN"      \
     --voro_embedding    4                   \
+    --random_seed       42                  \
     --recache
