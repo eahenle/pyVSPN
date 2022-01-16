@@ -122,12 +122,17 @@ def load_data(device, args):
 
     # load graph arrays and pickle data objects for each graph
     names = [name for name in df["name"]]
+    # track which name indices are skipped
+    keep_i = numpy.ones(len(names))
     for i,name in enumerate(tqdm(df["name"], desc="Collecting Graph Data", mininterval=2)):
         try:
-            cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV), f"graphs/{name}.pkl", args)
-        except:
-            pass
-
+            cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV, args), f"graphs/{name}.pkl", args)
+        except Exception as exception:
+            keep_i[i] = 0
+            print(f"Warning: dropping {name}. Exception follows.\n{exception}")
+    # filter names
+    keeps = [i for i,x in enumerate(keep_i) if x == 1]
+    names = [names[i] for i in keeps]
     # generate train/validate/test splits
     training_split, validation_split, test_split = cached(lambda : get_split_data(names, args), "data_split.pkl", args)
 
@@ -148,7 +153,7 @@ def load_data(device, args):
         atom_feature_length = training_data[0]["x_b"].shape[1]
         voro_feature_length = training_data[0]["x_v"].shape[1]
     elif model == "JointVSPN":
-        pass #todo:  JointVSPN
+        pass ## TODO  JointVSPN
     else:
         assert(False, "Invalid model loading directives.")
 
