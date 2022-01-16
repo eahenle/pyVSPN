@@ -153,9 +153,9 @@ def load_data(device, args):
         atom_feature_length = training_data[0]["x_b"].shape[1]
         voro_feature_length = training_data[0]["x_v"].shape[1]
     elif model == "JointVSPN":
-        pass ## TODO  JointVSPN
+        raise Exception("Model not implemented (yet).")
     else:
-        assert(False, "Invalid model loading directives.")
+        raise Exception("Invalid model loading directives.")
 
 
 

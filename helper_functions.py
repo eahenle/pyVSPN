@@ -1,6 +1,22 @@
 import os
 import pickle
+import shutil
 import torch
+
+
+# get the cache ready (currently just deletes and remakes the cache directory if --recache is set)
+def prepare_cache(args):
+    if args.recache:
+        try:
+            shutil.rmtree(args.cache_path)
+        except Exception as exception:
+            print(f"Warning: Could not delete cache at {args.cache_path}\n{exception}")
+
+        try:
+            os.mkdir(args.cache_path)
+            os.mkdir(f"{args.cache_path}/graphs")
+        except Exception as exception:
+            print(f"Warning: Could not create cache directory at {args.cache_path}\n{exception}")
 
 
 # select CPU or GPU as compute device
@@ -11,7 +27,7 @@ def choose_device(args):
     elif torch.cuda.is_available():
         device = torch.device(device_name)
     else:
-        raise Exception("CUDA not available")
+        raise Exception("Error: CUDA requested but not available")
     return device
 
 
@@ -46,7 +62,7 @@ def cached(f, cache_file, args):
         # load cached result
         with open(cache_file, "rb") as cf:
             output = pickle.load(cf)
-    return output ## TODO hack to `rm -rf cache`
+    return output
 
 
 def save_model(model, args):

@@ -5,7 +5,7 @@ from model_definition import choose_model
 from model_training import train
 from data_handling import load_data
 from argument_parsing import parse_args
-from helper_functions import choose_device, check_paths, save_model, print_args, write_args
+from helper_functions import choose_device, check_paths, save_model, print_args, write_args, prepare_cache
 from model_evaluation import evaluate
 
 
@@ -26,6 +26,9 @@ def main():
 
     # set random seed
     random.seed(args.random_seed)
+
+    # prep cache
+    prepare_cache(args)
 
     # load data as DataLoader objects
     training_data, validation_data, test_data, atom_feature_length, voro_feature_length = load_data(device, args)
