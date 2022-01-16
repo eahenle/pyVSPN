@@ -42,5 +42,4 @@ def main():
     save_model(model, args)
 
 
-if __name__ == "__main__":
-    main()
+__name__ == "__main__" and main()
