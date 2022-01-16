@@ -92,6 +92,7 @@ def load_data(device, args):
     input_path  = args.input_path
     batch_size  = args.batch_size
     model       = args.model
+    sample      = args.sample
     
     load_A  = False
     load_V  = False
@@ -116,11 +117,16 @@ def load_data(device, args):
 
     # load graph arrays and pickle data objects for each graph
     names = [name for name in df["name"]]
+    targets = [target for target in df[target]]
+    # apply random sampling
+    if sample != 0:
+        names = random.sample(names, sample)
+        targets = random.sample(targets, sample)
     # track which name indices are skipped
     keep_i = numpy.ones(len(names))
     for i,name in enumerate(tqdm(names, desc="Collecting Graph Data", mininterval=2)):
         try:
-            cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV, encoding, args), f"graphs/{name}.pkl", args)
+            cached(lambda : load_graph_arrays(name, targets[i], input_path, load_A, load_V, load_AV, encoding, args), f"graphs/{name}.pkl", args)
         except Exception as exception:
             keep_i[i] = 0
             print(f"Warning: dropping {name}. Exception follows.\n{exception}")

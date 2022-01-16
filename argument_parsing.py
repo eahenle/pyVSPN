@@ -71,6 +71,9 @@ def parse_args():
     parser.add_argument("--recache", action=argparse.BooleanOptionalAction, default=False,
         help="Ignore and overwrite cache files.")
 
+    parser.add_argument("--sample", type=int, default=0,
+        help="Number of input examples to randomly sample. If 0, will use all.")
+
     parser.add_argument("--target_data", default="input_data/targets.csv",
         help="File containing structure names and target values (CSV format).")
 
