@@ -59,7 +59,7 @@ class MPNNBlock(torch.nn.Module):
     def forward(self, x, edge_index, batch):
         x = self.mpnn(x, edge_index)
         x = self.relu(x)
-        x = torch_geometric.nn.global_mean_pool(x, batch) #todo: add functionality to change readout through argument
+        x = torch_geometric.nn.global_mean_pool(x, batch) ## TODO add functionality to change readout through argument
         return x
 
 
@@ -177,7 +177,7 @@ class VSPN(torch.nn.Module):
         atom_mpnn_aggr = args.mpnn_aggr
         voro_mpnn_aggr = args.mpnn_aggr
 
-        self.parallel = parallel #todo: use a different class for JointVSPN
+        self.parallel = parallel ## TODO use a different class for JointVSPN
 
         if parallel:
             # embedding, mpnn, and readout for bonded graphs
