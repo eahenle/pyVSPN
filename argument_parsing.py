@@ -1,4 +1,5 @@
 import argparse
+import random
 
 def parse_args():
     """
@@ -54,6 +55,9 @@ def parse_args():
 
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
+
+    parser.add_argument("--random_seed", type=int, default=int(42 * random.random()),
+        help="Seed for reproducible pseudorandom number generation. Default value is randomly generated.")
 
     parser.add_argument("--rebound_threshold", type=int, default=10,
         help="Maximum number of consecutive epochs with validation loss increase before early stopping.")

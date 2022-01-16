@@ -1,3 +1,4 @@
+import random
 import torch
 
 from model_definition import choose_model
@@ -22,6 +23,9 @@ def main():
 
     # select training device (CPU/GPU)
     device = choose_device(args)
+
+    # set random seed
+    random.seed(args.random_seed)
 
     # load data as DataLoader objects
     training_data, validation_data, test_data, atom_feature_length, voro_feature_length = load_data(device, args)
