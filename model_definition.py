@@ -51,15 +51,19 @@ class MPNNBlock(torch.nn.Module):
     author: ali
     '''
 
-    def __init__(self, hidden_size, mpnn_steps, mpnn_aggr):
+    def __init__(self, hidden_size, mpnn_steps, mpnn_aggr, mpnn_readout):
         super().__init__()
         self.mpnn = torch_geometric.nn.conv.GatedGraphConv(hidden_size, mpnn_steps, mpnn_aggr)
         self.relu = torch.nn.ReLU()
+        if mpnn_readout == "node_mean":
+            self.readout = torch_geometric.nn.global_mean_pool
+        else:
+            raise Exception("Requested readout not recognized.")
 
     def forward(self, x, edge_index, batch):
         x = self.mpnn(x, edge_index)
         x = self.relu(x)
-        x = torch_geometric.nn.global_mean_pool(x, batch) ## TODO add functionality to change readout through argument
+        x = self.readout(x, batch)
         return x
 
 

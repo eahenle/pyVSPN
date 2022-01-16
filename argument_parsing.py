@@ -53,6 +53,9 @@ def parse_args():
     parser.add_argument("--mpnn_aggr", default="add",
         help="Aggregation function for MPNN messages.")
 
+    parser.add_argument("--mpnn_readout", default="node_mean",
+        help="Readout function for node-to-graph-level encoding after message passing.")
+
     parser.add_argument("--mpnn_steps", type=int, default=5,
         help="Number of MPNN message propagation steps.")
 
