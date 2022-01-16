@@ -29,6 +29,9 @@ def parse_args():
     parser.add_argument("--element_embedding", type=int, default=10,
         help="Length of nodes' input layer encoding vectors.")
 
+    parser.add_argument("--encoding", type=str, default="GaussianRBF",
+        help="Function to use for encoding Voronoi sphere radii to feature vectors. Default is currently only option.")
+
     parser.add_argument("--hidden_encoding", type=int, default=10,
         help="Length of nodes' hidden encoding vectors.")
     

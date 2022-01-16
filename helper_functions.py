@@ -1,7 +1,20 @@
+import numpy
 import os
 import pickle
 import shutil
 import torch
+
+
+# perform a gaussian rbf encoding of the scalars to a vector of length N
+def _gaussian(scalars, N):
+            n = len(scalars)
+            r_min, r_max = scalars.min(), scalars.max()
+            rs = numpy.linspace(r_min, r_max, N)
+            gamma = (r_max - r_min) / N
+            X = numpy.zeros((n, N))
+            for i in numpy.arange(n):
+                X[i, :] = [numpy.exp(-abs(r - scalars[i]) / gamma) for r in rs]
+            return X
 
 
 # get the cache ready (currently just deletes and remakes the cache directory if --recache is set)
