@@ -3,8 +3,6 @@ import pickle
 import torch
 from tqdm import tqdm
 
-from helper_functions import save_model
-
 # training routine
 def train(model, training_data, validation_data, loss_func, args):
     # unpack args
@@ -78,7 +76,7 @@ def train(model, training_data, validation_data, loss_func, args):
         # preserve optimal model
         if validation_loss < best_val_loss:
             best_val_loss = validation_loss
-            save_model(model, args)
+            torch.save(model, f"{args.cache_path}/model.pt")
 
         # check for validation loss rebound
         if validation_loss > previous_loss:
@@ -90,6 +88,6 @@ def train(model, training_data, validation_data, loss_func, args):
         previous_loss = validation_loss
 
     # re-load model w/ lowest validation loss
-    with open(f"{args.output_path}/trained_model.pkl", "rb") as f:
-        model = pickle.load( f)
+    model = torch.load(f"{args.cache_path}/model.pt")
+
     return model

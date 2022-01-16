@@ -78,16 +78,6 @@ def cached(f, cache_file, args):
     return output
 
 
-def save_model(model, args):
-    with open(f"{args.output_path}/trained_model.pkl", "wb") as f:
-        pickle.dump(model, f)
-
-
-def save_checkpoint(model, args):
-    with open(f"{args.cache_path}/checkpoint.pkl", "wb") as f:
-        pickle.dump(model, f)
-
-
 def print_args(args):
     print("\nARGS")
     print("########################################")

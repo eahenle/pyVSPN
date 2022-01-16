@@ -118,7 +118,7 @@ def load_data(device, args):
     names = [name for name in df["name"]]
     # track which name indices are skipped
     keep_i = numpy.ones(len(names))
-    for i,name in enumerate(tqdm(df["name"], desc="Collecting Graph Data", mininterval=2)):
+    for i,name in enumerate(tqdm(names, desc="Collecting Graph Data", mininterval=2)):
         try:
             cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV, encoding, args), f"graphs/{name}.pkl", args)
         except Exception as exception:

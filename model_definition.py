@@ -51,7 +51,7 @@ class MPNNBlock(torch.nn.Module):
     author: ali
     '''
 
-    def __init__(self, hidden_size, mpnn_steps, mpnn_aggr, mpnn_readout):
+    def __init__(self, hidden_size, mpnn_steps, mpnn_aggr, mpnn_readout="node_mean"):
         super().__init__()
         self.mpnn = torch_geometric.nn.conv.GatedGraphConv(hidden_size, mpnn_steps, mpnn_aggr)
         self.relu = torch.nn.ReLU()
