@@ -81,11 +81,11 @@ def load_graph_arrays(xtal_name, y, input_path, load_A, load_V, load_AV, args):
     if load_A and not load_V and not load_AV:
         data = torch_geometric.data.Data(x=atom_x, edge_index=atom_edge_index, y=y, name=xtal_name)
     elif load_V and not load_A and not load_AV:
-        data = torch_geometric.data.Data(voro_x=voro_x, voro_edge_index=voro_edge_index, y=y, name=xtal_name)
+        data = torch_geometric.data.Data(x=voro_x, edge_index=voro_edge_index, y=y, name=xtal_name)
     elif load_A and load_V and not load_AV:
         data = PairData(edge_index_b=atom_edge_index, x_b=atom_x, name_b = xtal_name, edge_index_v=voro_edge_index, x_v=voro_x, name_v=xtal_name, y=y)
     elif load_AV and not load_A and not load_V:
-        data = torch_geometric.data.Data(av_x=av_x, av_edge_index=av_edge_index, y=y, name=xtal_name)
+        data = torch_geometric.data.Data(x=av_x, edge_index=av_edge_index, y=y, name=xtal_name)
     else:
         assert(False, "Invalid model loading directives.")
 
@@ -123,7 +123,10 @@ def load_data(device, args):
     # load graph arrays and pickle data objects for each graph
     names = [name for name in df["name"]]
     for i,name in enumerate(tqdm(df["name"], desc="Collecting Graph Data", mininterval=2)):
-        cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV, args), f"graphs/{name}.pkl", args)
+        try:
+            cached(lambda : load_graph_arrays(name, df[target][i], input_path, load_A, load_V, load_AV), f"graphs/{name}.pkl", args)
+        except:
+            pass
 
     # generate train/validate/test splits
     training_split, validation_split, test_split = cached(lambda : get_split_data(names, args), "data_split.pkl", args)
@@ -133,9 +136,23 @@ def load_data(device, args):
     test_data = load_data_list(test_split, torch.device("cpu"), args)
     training_data = load_data_list(training_split, device, args)
 
+    # printing sizes
+    print(f'training_data_size: {len(training_data)}, validation_data_size: {len(validation_data)}, test_data_size: {len(test_data)}')
     # determine encoding length
-    atom_feature_length = training_data[0]["x_b"].shape[1]
-    voro_feature_length = training_data[0]["x_v"].shape[1]
+    atom_feature_length = voro_feature_length = None
+    if model == "BondingGraphGNN":
+        atom_feature_length = training_data[0]["x"].shape[1]
+    elif model == "PoreGraphGNN":
+        voro_feature_length = training_data[0]["x"].shape[1]
+    elif model == "ParallelVSPN":
+        atom_feature_length = training_data[0]["x_b"].shape[1]
+        voro_feature_length = training_data[0]["x_v"].shape[1]
+    elif model == "JointVSPN":
+        pass #todo:  JointVSPN
+    else:
+        assert(False, "Invalid model loading directives.")
+
+
 
     # cast training/validation data lists to DataLoader objects
     if load_A and load_V and not load_AV:
@@ -175,13 +192,16 @@ def get_split_data(names, args):
 
 # loads a graph from the cache
 def load_graph(name, cache_path):
-    with open(f"{cache_path}/graphs/{name}.pkl", "rb") as f:
-        graph = pickle.load(f)
-    return graph
+    try:
+        with open(f"{cache_path}/graphs/{name}.pkl", "rb") as f:
+            graph = pickle.load(f)
+        return graph
+    except:
+        pass
 
 
 # generates a data list
 def load_data_list(names, device, args):
     assert len(names) > 0
     cache_path = args.cache_path
-    return [load_graph(name, cache_path).to(device) for name in names]
+    return [load_graph(name, cache_path).to(device) for name in names if load_graph(name, cache_path) != None ]
