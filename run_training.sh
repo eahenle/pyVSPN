@@ -13,4 +13,5 @@ python3 main.py                             \
     --batch_size        256                 \
     --lr_decay_gamma    1                   \
     --model             "ParallelVSPN"      \
+    --voro_embedding    4                   \
     --recache

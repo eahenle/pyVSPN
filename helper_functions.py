@@ -46,7 +46,7 @@ def cached(f, cache_file, args):
         # load cached result
         with open(cache_file, "rb") as cf:
             output = pickle.load(cf)
-    return output
+    return output ## TODO hack to `rm -rf cache`
 
 
 def save_model(model, args):
