@@ -5,7 +5,7 @@ from model_definition import choose_model
 from model_training import train
 from data_handling import load_data
 from argument_parsing import parse_args
-from helper_functions import choose_device, check_paths, save_model, print_args, write_args, prepare_cache
+from helper_functions import choose_device, check_paths, print_args, write_args, prepare_cache
 from model_evaluation import evaluate
 
 
@@ -46,7 +46,7 @@ def main():
     evaluate(model, test_data, loss_func, args)
 
     # save model
-    save_model(model, args)
+    torch.save(model.state_dict(), f"{args.output_path}/trained_model.pt")
 
 
 __name__ == "__main__" and main()
