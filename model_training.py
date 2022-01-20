@@ -76,7 +76,7 @@ def train(model, training_data, validation_data, loss_func, args):
         # preserve optimal model
         if validation_loss < best_val_loss:
             best_val_loss = validation_loss
-            torch.save(model, f"{args.cache_path}/model.pt")
+            torch.save(model.state_dict(), f"{args.cache_path}/model.pt")
 
         # check for validation loss rebound
         if validation_loss > previous_loss:
@@ -88,6 +88,7 @@ def train(model, training_data, validation_data, loss_func, args):
         previous_loss = validation_loss
 
     # re-load model w/ lowest validation loss
-    model = torch.load(f"{args.cache_path}/model.pt")
+    model.load_state_dict(torch.load(f"{args.cache_path}/model.pt"))
+
 
     return model
