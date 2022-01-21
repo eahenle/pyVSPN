@@ -94,9 +94,10 @@ def load_data(device, args):
     model       = args.model
     sample      = args.sample
     
-    load_A  = False
-    load_V  = False
-    load_AV = False
+    load_A   = False
+    load_V   = False
+    load_AV  = False
+    encoding = None
 
     if model == "ParallelVSPN":
         load_A = True
@@ -111,6 +112,10 @@ def load_data(device, args):
         load_A = True
     elif model == "PoreGraphGNN":
         load_V = True
+        if args.encoding == "GaussianRBF":
+            encoding = _gaussian
+        else:
+            raise Exception("Only Gaussian RBF is implemented (so far).")
 
     # read the list of examples
     df = cached(lambda : pandas.read_csv(target_data), "target_data.pkl", args)
