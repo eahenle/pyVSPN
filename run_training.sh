@@ -12,7 +12,7 @@ python3 main.py                             \
     --val_prop          0.01                \
     --batch_size        256                 \
     --lr_decay_gamma    1                   \
-    --model             "ParallelVSPN"      \
+    --model             "PoreGraphGNN"      \
     --voro_embedding    3                   \
     --random_seed       42                  \
     --recache
