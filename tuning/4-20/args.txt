@@ -1,0 +1,27 @@
+target: working_capacity_vacuum_swing [mmol/g]
+atom_embedding: 10
+atom_h: 40
+voro_embedding: 4
+voro_h: 20
+atom_tau: 3
+voro_tau: 3
+encoding: GaussianRBF
+batch_size: 64
+cache_path: ./cache/0
+device: cuda:0
+input_path: ./input_data
+learning_rate: 0.001
+lr_decay_gamma: 1.0
+max_epochs: 2000
+model: ParallelVSPN
+mpnn_aggr: add
+mpnn_readout: node_mean
+output_path: ./tuning/4-20
+random_seed: 42
+rebound_threshold: 10
+recache: True
+sample: 0
+target_data: input_data/targets.csv
+test_prop: 0.2
+val_prop: 0.01
+verbose: False
