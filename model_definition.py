@@ -171,52 +171,28 @@ class VSPN(torch.nn.Module):
 
     def __init__(self, atom_feature_length, voro_feature_length, parallel, args):
         super().__init__()
-        #unpack args
-        atom_embedding_length = args.element_embedding
-        voro_embedding_length = args.voro_embedding
-        voro_h = args.voro_h
-        atom_h = args.hidden_encoding
-        atom_mpnn_steps = args.mpnn_steps
-        voro_mpnn_steps = args.mpnn_steps
-        atom_mpnn_aggr = args.mpnn_aggr
-        voro_mpnn_aggr = args.mpnn_aggr
+        assert parallel
 
-        self.parallel = parallel ## TODO use a different class for JointVSPN
+        # embedding, mpnn, and readout for bonded graphs
+        self.emb_layer_bond = EmbeddingBlock(feature_length = atom_feature_length, embedding_length = args.atom_embedding, bias_flag=False)
+        self.mpnn_layer_bond = MPNNBlock(hidden_size = args.atom_h, mpnn_steps = args.atom_tau, mpnn_aggr = args.mpnn_aggr)
 
-        if parallel:
-            # embedding, mpnn, and readout for bonded graphs
-            self.emb_layer_bond = EmbeddingBlock(feature_length = atom_feature_length, embedding_length = atom_embedding_length, bias_flag=False)
-            self.mpnn_layer_bond = MPNNBlock(hidden_size = atom_h, mpnn_steps = atom_mpnn_steps, mpnn_aggr = atom_mpnn_aggr)
-            # embedding, mpnn, and readout for vornoi graphs
-            self.emb_layer_vor = EmbeddingBlock(feature_length = voro_feature_length, embedding_length = voro_embedding_length, bias_flag=False)
-            self.mpnn_layer_vor = MPNNBlock(hidden_size = voro_h, mpnn_steps = voro_mpnn_steps, mpnn_aggr = voro_mpnn_aggr)
+        # embedding, mpnn, and readout for vornoi graphs
+        self.emb_layer_vor = EmbeddingBlock(feature_length = voro_feature_length, embedding_length = args.voro_embedding, bias_flag=False)
+        self.mpnn_layer_vor = MPNNBlock(hidden_size = args.voro_h, mpnn_steps = args.voro_tau, mpnn_aggr = args.mpnn_aggr)
 
-            # output layer to process concatenated embeddings of bonded and vornoi graphs
-            self.output_layer = OutputBlock(hidden_size = voro_h + atom_h, bias_flag=True)
-        else:
-            pass
+        # output layer to process concatenated embeddings of bonded and vornoi graphs
+        self.output_layer = OutputBlock(hidden_size = args.voro_h + args.atom_h, bias_flag=True)
 
-    def forward(self, datum):
-        if self.parallel:  # parallel VSPN
-            # unpacking args
-            atom_x = datum.x_b
-            atom_edge_index = datum.edge_index_b
-            name_b = datum.name_b
-            batch_b = datum.x_b_batch
-            voro_x = datum.x_v
-            voro_edge_index = datum.edge_index_v
-            name_v = datum.name_v
-            batch_v = datum.x_v_batch
 
-            # embedding
-            atom_x = self.emb_layer_bond(atom_x)
-            voro_x = self.emb_layer_vor(voro_x)
-            # mpnn and readout
-            atom_x = self.mpnn_layer_bond(atom_x, atom_edge_index, batch_b)
-            voro_x = self.mpnn_layer_bond(voro_x, voro_edge_index, batch_v)
+    def forward(self, data):
+        # embedding
+        atom_x = self.emb_layer_bond(data.x_b)
+        voro_x = self.emb_layer_vor(data.x_v)
 
-            # make predictions
-            return self.output_layer(torch.cat((atom_x, voro_x), dim=1)).squeeze(1)
+        # mpnn and readout
+        atom_x = self.mpnn_layer_bond(atom_x, data.edge_index_b, data.x_b_batch)
+        voro_x = self.mpnn_layer_vor(voro_x, data.edge_index_v, data.x_v_batch)
 
-        else:  # connected VSPN
-            pass
+        # make predictions
+        return self.output_layer(torch.cat((atom_x, voro_x), dim=1)).squeeze(1)

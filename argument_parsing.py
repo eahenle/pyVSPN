@@ -13,11 +13,36 @@ def parse_args():
         prog="python main.py", description="MPNN training",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
-    # required argument
+
+    ##* required argument
     parser.add_argument("target", help="Training target column.")
+
+
+    ##* hyperparameters
+    parser.add_argument("--atom_embedding", type=int, default=10,
+        help="Length of nodes' input layer encoding vectors.")
+
+    parser.add_argument("--atom_h", type=int, default=40,
+        help="Length of nodes' hidden encoding vectors.")
+    
+    parser.add_argument("--voro_embedding", type=int, default=3,
+        help="Length of Voro-node embedding after input layer.")
+
+    parser.add_argument("--voro_h", type=int, default=10,
+        help="Hidden representation length for Voro-nodes.")
+    
+    parser.add_argument("--atom_tau", type=int, default=3,
+        help="Number of MPNN message propagation steps for bonding graph.")
+
+    parser.add_argument("--voro_tau", type=int, default=3,
+        help="Number of MPNN message propagation steps for voro graph.")
         
-    # optional arguments
-    parser.add_argument("--batch_size", type=int, default=10,
+
+    ##* optional arguments
+    parser.add_argument("--encoding", type=str, default="GaussianRBF",
+        help="Function to use for encoding Voronoi sphere radii to feature vectors. Default is currently only option.")
+
+    parser.add_argument("--batch_size", type=int, default=64,
         help="Number of examples per mini-batch during training. Ignored when loading batches from disk.")
     
     parser.add_argument("--cache_path", default="./cache",
@@ -25,15 +50,6 @@ def parse_args():
 
     parser.add_argument("--device", default="cuda:0",
         help="Device on which to train. Defaults to cuda:0 if available, otherwise cpu.")
-
-    parser.add_argument("--element_embedding", type=int, default=10,
-        help="Length of nodes' input layer encoding vectors.")
-
-    parser.add_argument("--encoding", type=str, default="GaussianRBF",
-        help="Function to use for encoding Voronoi sphere radii to feature vectors. Default is currently only option.")
-
-    parser.add_argument("--hidden_encoding", type=int, default=10,
-        help="Length of nodes' hidden encoding vectors.")
     
     parser.add_argument("--input_path", default="./input_data",
         help="Path to folder containing input files.")
@@ -44,7 +60,7 @@ def parse_args():
     parser.add_argument("--lr_decay_gamma", type=float, default=1.,
         help="Gamma coefficient for learning rate decay.")
     
-    parser.add_argument("--max_epochs", type=int, default=10000,
+    parser.add_argument("--max_epochs", type=int, default=2000,
         help="Maximum number of training epochs.")
 
     parser.add_argument("--model", default="BondingGraphGNN",
@@ -55,9 +71,6 @@ def parse_args():
 
     parser.add_argument("--mpnn_readout", default="node_mean",
         help="Readout function for node-to-graph-level encoding after message passing.")
-
-    parser.add_argument("--mpnn_steps", type=int, default=5,
-        help="Number of MPNN message propagation steps.")
 
     parser.add_argument("--output_path", default="./output",
         help="Path to output directory.")
@@ -86,11 +99,6 @@ def parse_args():
     parser.add_argument("--verbose", action=argparse.BooleanOptionalAction, default=False,
         help="Toggle printing of detailed information to console.")
 
-    parser.add_argument("--voro_embedding", type=int, default=3,
-        help="Length of Voro-node embedding after input layer.")
-
-    parser.add_argument("--voro_h", type=int, default=10,
-        help="Hidden representation length for Voro-nodes.")
     
     # process and return arguments
     args = parser.parse_args()
